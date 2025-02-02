@@ -1,6 +1,6 @@
 # HomeGuardESP
 
-**HomeGuardESP** is an intelligent home security system developed on the ESP8266/ESP32 platform, designed to monitor and protect your home using sensors and Wi-Fi communication. The project allows you to detect critical events (e.g., unauthorized entries or emergency situations) and receive real-time alerts, with the ability to control and configure the system remotely via a web interface. 🏡🔒
+**HomeGuardESP** is an intelligent home security system developed on the ESP8266/ESP32 platform, designed to monitor and protect your home using sensors and Wi-Fi communication. The project allows you to detect critical events (e.g., unauthorized entries or emergency situations) and receive real-time alerts, with the ability to control and configure the system remotely via a mobile application. 🏡🔒
 
 ---
 
@@ -8,15 +8,16 @@
 
 The project was designed to offer an affordable and easy-to-implement security solution for homes. By integrating various sensor types (motion, contact, smoke, etc.), the system ensures complete monitoring of your home environment, notifying the user in case of any suspicious or critical events. 🚨📡
 
+> **Note:** This implementation includes MQTT integration and Wi-Fi connectivity, along with support for an MQ2 gas sensor and a PIR motion sensor. Additionally, a mobile application is planned to receive MQTT messages and display real-time sensor statuses, with more features to be added in the future.
+
 ---
 
 ## Features
 
 - **Real-time monitoring:** Instantly detects security events and triggers alarms. ⏱️🔍
 - **Customizable alerts:** Configure alerts and notifications according to your preferences. 🛎️
-- **Web interface:** Remote access to view system status and configure parameters. 🌐💻
-- **Support for various sensors:** Compatible with motion sensors, reed switches, smoke detectors, and more. 🏠🔋
 - **Easy installation:** Step-by-step guide for setting up and installing the system. 🔧👨‍🔧
+- **MQTT Integration:** Seamless communication between devices, enabling real-time updates to a mobile app. 📲
 
 ---
 
@@ -48,7 +49,7 @@ The project was designed to offer an affordable and easy-to-implement security s
    - Add support for **ESP8266/ESP32** as per the official documentation.
 
 3. **Customize the configuration:**
-   - Open the configuration file (e.g., `config.h` or similar) and update the Wi-Fi connection details, as well as any other specific settings (e.g., sensor thresholds, notification addresses, etc.).
+   - Open the configuration file (e.g., `config.h` or similar) and update the Wi-Fi connection details, as well as any other specific settings (e.g., sensor thresholds, MQTT broker settings, notification addresses, etc.).
 
 4. **Upload the code to the ESP board:**
    - Connect the board to your computer.
@@ -63,6 +64,7 @@ After configuration, the system will begin continuous monitoring of your home. Y
 - View the real-time status of sensors.
 - Configure alarms and notifications.
 - Review the alert history.
+- Receive MQTT messages that provide live updates on the sensor data.
 
 ---
 
