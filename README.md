@@ -83,7 +83,7 @@ Acest proiect este distribuit sub licența [MIT License](https://opensource.org/
 ## Contact
 
 Pentru întrebări, sugestii sau colaborări, mă poți contacta la:
-- **Email:** [adresa ta de email]
+- **Email:** andrei.catanoiu@gmail.com
 - **GitHub:** [AndreiCatanoiu](https://github.com/AndreiCatanoiu)
 
 ---
