@@ -10,6 +10,7 @@ void app_main()
     if (use_mq2)
     {
         xTaskCreate(mq2_task, "mq2_task", 2048, NULL, 5, NULL);
+        //tst
     }
     else
     {
