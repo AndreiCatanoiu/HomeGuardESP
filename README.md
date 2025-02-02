@@ -1,65 +1,58 @@
-HomeGuardESP
+🏠 HomeGuardESP
 
-HomeGuardESP este un sistem inteligent de securitate pentru locuințe, bazat pe un microcontroller ESP și comunicare prin MQTT. Proiectul permite monitorizarea senzorilor PIR și MQ2 pentru detecția mișcării și a gazelor inflamabile, iar datele sunt transmise către un broker MQTT.
+HomeGuardESP is an intelligent home security system based on an ESP microcontroller and MQTT communication. The project allows monitoring of PIR and MQ2 sensors for motion detection and flammable gas detection, with data being transmitted to an MQTT broker.
 
-Caracteristici
+🚀 Features
 
-Comunicare prin MQTT: Datele sunt transmise în timp real către un broker MQTT.
+✅ MQTT Communication – Data is transmitted in real-time to an MQTT broker.
+✅ Motion Monitoring – Uses a PIR sensor to detect presence.
+✅ Gas Detection – The MQ2 sensor detects flammable gases and smoke.
 
-Monitorizarea mișcării: Utilizarea unui senzor PIR pentru detecția prezenței.
+📋 Requirements
 
-Detectarea gazelor: Senzorul MQ2 detectează gaze inflamabile și fumul.
+🔹 ESP (e.g., ESP8266 or ESP32)
+🔹 PIR Sensor
+🔹 MQ2 Sensor
+🔹 VSCode with PlatformIO
+🔹 MQTT Server (e.g., Mosquitto)
+🔹 TeraTerm for serial testing
 
-Cerințe preliminare
+🛠 Installation and Configuration
 
-ESP (de exemplu, ESP8266 sau ESP32)
+1️⃣ Setting Up the Development Environment
 
-Senzor PIR
+Install VSCode and the PlatformIO extension.
 
-Senzor MQ2
+Clone this repository in VSCode.
 
-VSCode cu PlatformIO
+2️⃣ Setting Up the MQTT Server
 
-Server MQTT (de exemplu, Mosquitto)
+Install and run an MQTT broker, such as Mosquitto, on a local or cloud server.
 
-TeraTerm pentru testare serială
+Ensure the ESP connects correctly to the MQTT broker.
 
-Instalare și configurare
+3️⃣ Flashing the Firmware to ESP
 
-1. Configurarea mediului de dezvoltare
+Open the project in PlatformIO.
 
-Instalează VSCode și extensia PlatformIO.
+Configure the platformio.ini file to include WiFi connection details and MQTT server settings.
 
-Clonează acest repository în VSCode.
+Compile and upload the code to the ESP.
 
-2. Configurarea serverului MQTT
+4️⃣ Testing with TeraTerm
 
-Instalează și rulează un broker MQTT, cum ar fi Mosquitto, pe un server local sau cloud.
+Connect the ESP via USB and open TeraTerm.
 
-Asigură-te că ESP-ul se conectează corect la brokerul MQTT.
+View serial messages to check the sensor functionality.
 
-3. Flash-uirea firmware-ului pe ESP
+📡 Usage
 
-Deschide proiectul în PlatformIO.
+🔹 The ESP reads data from the PIR and MQ2 sensors.
+🔹 Data is sent to the MQTT broker.
+🔹 In case of motion or gas detection, corresponding MQTT messages can be generated.
 
-Configurează fișierul platformio.ini pentru a include detaliile conexiunii WiFi și ale serverului MQTT.
+📜 License
 
-Compilează și încarcă codul pe ESP.
+This project is licensed under the MIT License.
 
-4. Testarea cu TeraTerm
-
-Conectează ESP-ul prin USB și deschide TeraTerm pentru a vizualiza mesajele seriale și a verifica funcționarea senzorilor.
-
-Utilizare
-
-ESP-ul citește datele de la senzorii PIR și MQ2.
-
-Datele sunt trimise către brokerul MQTT.
-
-În caz de detecție de mișcare sau gaz, se pot genera mesaje MQTT corespunzătoare.
-
-Licență
-
-Acest proiect este licențiat sub MIT License.
-
-Pentru mai multe informații, vizitează repository-ul oficial: HomeGuardESP.
+🔗 Official Repository: HomeGuardESP
