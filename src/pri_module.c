@@ -30,7 +30,7 @@ void pir_task()
     {
         if (pir_state == 1)
         {
-            ESP_LOGI(TAG, "Motion detected!");
+            ESP_LOGW(TAG, "Motion detected!");
         }
         else
         {

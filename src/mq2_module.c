@@ -37,15 +37,15 @@ static void mq2_analog_config()
 static void interpret_gas_level(int analog_value)
 {
     
-    if (analog_value < 1000)
+    if (analog_value < SAFE_LEVEL)
     {
         ESP_LOGI(TAG, "Analog gas level: %d - %s", analog_value, MSG_SAFE);
     }
-    else if (analog_value < 2000)
+    else if (analog_value < CAUTION_LEVEL)
     {
         ESP_LOGI(TAG, "Analog gas level: %d - %s", analog_value, MSG_CAUTION);
     }
-    else if (analog_value < 3000)
+    else if (analog_value < WARNING_LEVEL)
     {
         ESP_LOGW(TAG, "Analog gas level: %d - %s", analog_value, MSG_WARNING);
     }
@@ -68,11 +68,11 @@ void mq2_task()
         digital_state = gpio_get_level(MQ2_SENSOR_DIGITAL_GPIO);
         if (digital_state == 0)
         {
-            ESP_LOGI(TAG, "Gas detected (Digital)!");
+            ESP_LOGW(TAG, "Gas detected (Digital)!");
         }
         else
         {
-            ESP_LOGI(TAG, "No gas detected (Digital).");
+            ESP_LOGI(TAG, "No gas detected. (Digital)");
         }
 
         analog_value = adc1_get_raw(ADC1_CHANNEL_6);
