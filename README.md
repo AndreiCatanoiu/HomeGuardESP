@@ -1,90 +1,86 @@
 # HomeGuardESP
 
-**HomeGuardESP** este un sistem de securitate inteligent pentru locuință, dezvoltat pe platforma ESP8266/ESP32, care monitorizează și protejează casa prin utilizarea senzorilor și a comunicației Wi-Fi. Proiectul îți permite să detectezi evenimentele critice (de exemplu, intrări neautorizate sau situații de urgență) și să primești alerte în timp real, având posibilitatea de a controla și configura sistemul de la distanță printr-o interfață web.
+**HomeGuardESP** is an intelligent home security system developed on the ESP8266/ESP32 platform, designed to monitor and protect your home using sensors and Wi-Fi communication. The project allows you to detect critical events (e.g., unauthorized entries or emergency situations) and receive real-time alerts, with the ability to control and configure the system remotely via a web interface. 🏡🔒
 
 ---
 
-## Descriere
+## Description
 
-Proiectul a fost conceput pentru a oferi o soluție de securitate accesibilă și ușor de implementat pentru locuințe. Prin integrarea diverselor tipuri de senzori (mișcare, contact, fum etc.), sistemul asigură o monitorizare completă a mediului casnic, notificând utilizatorul în cazul oricăror evenimente suspecte sau critice.
-
----
-
-## Caracteristici
-
-- **Monitorizare în timp real:** Detectează imediat evenimentele de securitate și declanșează alarme.
-- **Alarme personalizabile:** Configurarea alertelor și notificărilor conform preferințelor utilizatorului.
-- **Interfață web:** Acces remote pentru vizualizarea statusului sistemului și configurarea parametrilor.
-- **Suport pentru diverse senzori:** Compatibil cu senzori de mișcare, senzori de contact (reed switches), detectoare de fum și multe altele.
-- **Ușor de instalat:** Ghid pas cu pas pentru configurarea și instalarea sistemului.
+The project was designed to offer an affordable and easy-to-implement security solution for homes. By integrating various sensor types (motion, contact, smoke, etc.), the system ensures complete monitoring of your home environment, notifying the user in case of any suspicious or critical events. 🚨📡
 
 ---
 
-## Hardware necesar
+## Features
 
-- Placă **ESP8266** sau **ESP32**
-- Senzori (ex.: **PIR** pentru mișcare, **contacte magnetice**, **detectoare de fum** etc.)
-- Modul Wi-Fi integrat
-- Alte componente electronice (rezistențe, LED-uri, buzzer etc.)
-
----
-
-## Software necesar
-
-- [Arduino IDE](https://www.arduino.cc/en/software) sau [PlatformIO](https://platformio.org/)
-- Suportul pentru placa ESP (urmează instrucțiunile din [documentația ESP8266](https://github.com/esp8266/Arduino) sau [documentația ESP32](https://docs.espressif.com/projects/arduino-esp32/en/latest/installing.html))
-- Alte librării specificate în cod (consultați eventualul fișier `libraries.txt` sau documentația inline)
+- **Real-time monitoring:** Instantly detects security events and triggers alarms. ⏱️🔍
+- **Customizable alerts:** Configure alerts and notifications according to your preferences. 🛎️
+- **Web interface:** Remote access to view system status and configure parameters. 🌐💻
+- **Support for various sensors:** Compatible with motion sensors, reed switches, smoke detectors, and more. 🏠🔋
+- **Easy installation:** Step-by-step guide for setting up and installing the system. 🔧👨‍🔧
 
 ---
 
-## Instalare și configurare
+## Required Hardware
 
-1. **Clonarea repository-ului:**
+- **ESP8266** or **ESP32** board
+- Sensors (e.g., **PIR** for motion, **magnetic contacts**, **smoke detectors**, etc.)
+- Integrated Wi-Fi module
+
+---
+
+## Required Software
+
+- [Arduino IDE](https://www.arduino.cc/en/software) or [PlatformIO](https://platformio.org/)
+- Support for the ESP board (follow the instructions in the [ESP8266 documentation](https://github.com/esp8266/Arduino) or the [ESP32 documentation](https://docs.espressif.com/projects/arduino-esp32/en/latest/installing.html))
+
+---
+
+## Installation and Configuration
+
+1. **Clone the repository:**
 
     ```bash
     git clone https://github.com/AndreiCatanoiu/HomeGuardESP.git
     ```
 
-2. **Configurarea mediului de dezvoltare:**
-   - Instalează [Arduino IDE](https://www.arduino.cc/en/software) sau [PlatformIO](https://platformio.org/).
-   - Adaugă suportul pentru **ESP8266/ESP32** conform documentației oficiale.
+2. **Configure the development environment:**
+   - Install [Arduino IDE](https://www.arduino.cc/en/software) or [PlatformIO](https://platformio.org/).
+   - Add support for **ESP8266/ESP32** as per the official documentation.
 
-3. **Personalizarea configurației:**
-   - Deschide fișierul de configurare (de exemplu, `config.h` sau similar) și actualizează datele de conectare la rețeaua Wi-Fi, precum și orice alte setări specifice (ex.: praguri pentru senzori, adrese pentru notificări etc.).
+3. **Customize the configuration:**
+   - Open the configuration file (e.g., `config.h` or similar) and update the Wi-Fi connection details, as well as any other specific settings (e.g., sensor thresholds, notification addresses, etc.).
 
-4. **Încărcarea codului pe placa ESP:**
-   - Conectează placa la calculator.
-   - Selectează portul și modelul corect în Arduino IDE/PlatformIO.
-   - Compilează și încarcă programul pe placa ESP.
-
----
-
-## Utilizare
-
-După configurare, sistemul va începe monitorizarea continuă a locuinței. Poți accesa interfața web (dacă a fost implementată) pentru a:
-- Vizualiza statusul în timp real al senzorilor.
-- Configura alarme și notificări.
-- Consulta istoricul alertelor.
+4. **Upload the code to the ESP board:**
+   - Connect the board to your computer.
+   - Select the correct port and board in Arduino IDE/PlatformIO.
+   - Compile and upload the program to the ESP board.
 
 ---
 
-## Contribuții
+## Usage
 
-Contribuțiile sunt binevenite! Dacă ai sugestii, îmbunătățiri sau ai identificat bug-uri, te rog să deschizi un [issue](https://github.com/AndreiCatanoiu/HomeGuardESP/issues) sau să propui un [pull request](https://github.com/AndreiCatanoiu/HomeGuardESP/pulls).
+After configuration, the system will begin continuous monitoring of your home. You can access the mobile application (if implemented) to:
+- View the real-time status of sensors.
+- Configure alarms and notifications.
+- Review the alert history.
 
 ---
 
-## Licență
+## Contributions
 
-Acest proiect este distribuit sub licența [MIT License](https://opensource.org/licenses/MIT). Detalii complete se regăsesc în fișierul [LICENSE](./LICENSE).
+Contributions are welcome! If you have suggestions, improvements, or have found any bugs, please open an [issue](https://github.com/AndreiCatanoiu/HomeGuardESP/issues) or propose a [pull request](https://github.com/AndreiCatanoiu/HomeGuardESP/pulls). 🤝
+
+---
+
+## License
+
+This project is distributed under the [MIT License](https://opensource.org/licenses/MIT). Full details can be found in the [LICENSE](./LICENSE) file. 📜
 
 ---
 
 ## Contact
 
-Pentru întrebări, sugestii sau colaborări, mă poți contacta la:
-- **Email:** andrei.catanoiu@gmail.com
+For questions, suggestions, or collaborations, you can reach me at:
 - **GitHub:** [AndreiCatanoiu](https://github.com/AndreiCatanoiu)
 
 ---
-
