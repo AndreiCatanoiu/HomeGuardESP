@@ -17,21 +17,20 @@ static void pir_config()
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE 
     };
-
     gpio_config(&io_conf);
 }
     
 void pir_task()
 {
     pir_config();
-
     int pir_state = gpio_get_level(PIR_SENSOR_GPIO);
-    ESP_LOGI(TAG, "PIR Motion Detection Initialized on GPIO %d", PIR_SENSOR_GPIO);
+
+    ESP_LOGI(TAG, "Motion detection initialized on GPIO %d", PIR_SENSOR_GPIO);
     while (1)
     {
         if (pir_state == 1)
         {
-            ESP_LOGI(TAG, "Motion detected!");
+            ESP_LOGW(TAG, "Motion detected!");
         }
         else
         {
