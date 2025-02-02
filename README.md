@@ -1,58 +1,59 @@
-🏠 HomeGuardESP
+HomeGuardESP
+HomeGuardESP este un sistem de securitate inteligent pentru locuință, dezvoltat pe platforma ESP8266/ESP32, care monitorizează și protejează casa prin utilizarea senzorilor și a comunicației Wi-Fi. Proiectul îți permite să detectezi evenimentele critice (de exemplu, intrări neautorizate sau situații de urgență) și să primești alerte în timp real, având posibilitatea de a controla și configura sistemul de la distanță printr-o interfață web.
 
-HomeGuardESP is an intelligent home security system based on an ESP microcontroller and MQTT communication. The project allows monitoring of PIR and MQ2 sensors for motion detection and flammable gas detection, with data being transmitted to an MQTT broker.
+Descriere
+Proiectul a fost conceput pentru a oferi o soluție de securitate accesibilă și ușor de implementat pentru locuințe. Prin integrarea diverselor tipuri de senzori (mișcare, contact, fum etc.), sistemul asigură o monitorizare completă a mediului casnic, notificând utilizatorul în cazul oricăror evenimente suspecte sau critice.
 
-🚀 Features
+Caracteristici
+Monitorizare în timp real: Detectează imediat evenimentele de securitate și declanșează alarme.
+Alarme personalizabile: Configurarea alertelor și notificărilor conform preferințelor utilizatorului.
+Interfață web: Acces remote pentru vizualizarea statusului sistemului și configurarea parametrilor.
+Suport pentru diverse senzori: Compatibil cu senzori de mișcare, senzori de contact (reed switches), detectoare de fum și multe altele.
+Ușor de instalat: Ghid pas cu pas pentru configurarea și instalarea sistemului.
+Hardware necesar
+Placă ESP8266 sau ESP32
+Senzori (ex.: PIR pentru mișcare, contacte magnetice, detectoare de fum etc.)
+Modul Wi-Fi integrat
+Alte componente electronice (rezistențe, LED-uri, buzzer etc.)
+Software necesar
+Arduino IDE sau PlatformIO
+Suportul pentru placa ESP (urmează instrucțiunile din documentația ESP8266 sau documentația ESP32)
+Alte librării specificate în cod (consultați eventualul fișier libraries.txt sau documentația inline)
+Instalare și configurare
+Clonarea repository-ului:
 
-✅ MQTT Communication – Data is transmitted in real-time to an MQTT broker.
-✅ Motion Monitoring – Uses a PIR sensor to detect presence.
-✅ Gas Detection – The MQ2 sensor detects flammable gases and smoke.
+bash
+Copiază
+Editează
+git clone https://github.com/AndreiCatanoiu/HomeGuardESP.git
+Configurarea mediului de dezvoltare:
 
-📋 Requirements
+Instalează Arduino IDE sau PlatformIO.
+Adaugă suportul pentru ESP8266/ESP32 conform documentației oficiale.
+Personalizarea configurației:
 
-🔹 ESP (e.g., ESP8266 or ESP32)
-🔹 PIR Sensor
-🔹 MQ2 Sensor
-🔹 VSCode with PlatformIO
-🔹 MQTT Server (e.g., Mosquitto)
-🔹 TeraTerm for serial testing
+Deschide fișierul de configurare (de exemplu, config.h sau similar) și actualizează datele de conectare la rețeaua Wi-Fi, precum și orice alte setări specifice (ex.: praguri pentru senzori, adrese pentru notificări etc.).
+Încărcarea codului pe placa ESP:
 
-🛠 Installation and Configuration
+Conectează placa la calculator.
+Selectează portul și modelul corect în Arduino IDE/PlatformIO.
+Compilează și încarcă programul pe placa ESP.
+Utilizare
+După configurare, sistemul va începe monitorizarea continuă a locuinței. Poți accesa interfața web (dacă a fost implementată) pentru a:
 
-1️⃣ Setting Up the Development Environment
+Vizualiza statusul în timp real al senzorilor.
+Configura alarme și notificări.
+Consulta istoricul alertelor.
+Contribuții
+Contribuțiile sunt binevenite! Dacă ai sugestii, îmbunătățiri sau ai identificat bug-uri, te rog să deschizi un issue sau să propui un pull request.
 
-Install VSCode and the PlatformIO extension.
+Licență
+Acest proiect este distribuit sub licența [Numele Licenței]. Pentru detalii complete, te rugăm să consulți fișierul LICENSE.
 
-Clone this repository in VSCode.
+Notă: Dacă ai pierdut linkurile către licență sau dorești să actualizezi informațiile despre licență, asigură-te că incluzi aici linkul corect (de exemplu, MIT License sau altă licență pe care ai ales-o).
 
-2️⃣ Setting Up the MQTT Server
+Contact
+Pentru întrebări, sugestii sau colaborări, mă poți contacta la:
 
-Install and run an MQTT broker, such as Mosquitto, on a local or cloud server.
-
-Ensure the ESP connects correctly to the MQTT broker.
-
-3️⃣ Flashing the Firmware to ESP
-
-Open the project in PlatformIO.
-
-Configure the platformio.ini file to include WiFi connection details and MQTT server settings.
-
-Compile and upload the code to the ESP.
-
-4️⃣ Testing with TeraTerm
-
-Connect the ESP via USB and open TeraTerm.
-
-View serial messages to check the sensor functionality.
-
-📡 Usage
-
-🔹 The ESP reads data from the PIR and MQ2 sensors.
-🔹 Data is sent to the MQTT broker.
-🔹 In case of motion or gas detection, corresponding MQTT messages can be generated.
-
-📜 License
-
-This project is licensed under the MIT License.
-
-🔗 Official Repository: HomeGuardESP
+Email: [adresa ta de email]
+GitHub: AndreiCatanoiu
