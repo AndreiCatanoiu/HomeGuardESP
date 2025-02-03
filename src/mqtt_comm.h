@@ -3,13 +3,13 @@
 
 #include "freertos/FreeRTOS.h"
 
-#define COMM_MQTT_SERVER	"MQTT_SERVER"
-#define COMM_MQTT_PORT		"MQTT_PORT"
-#define COMM_MQTT_USER		"MQTT_USER"
-#define COMM_MQTT_PASS		"MQTT_PASS"
-#define COMM_MQTT_TOPIC		"MQTT_TOPIC"
-#define COMM_MQTT_UP		"MQTT_UP"
-#define COMM_MQTT_DOWN		"MQTT_DOWN"
+#define COMM_MQTT_SERVER	"your_server"
+#define COMM_MQTT_PORT		1883
+#define COMM_MQTT_USER		"your_user_name"
+#define COMM_MQTT_PASS		"your_user_password"
+#define COMM_MQTT_TOPIC		"your_topic"
+#define COMM_MQTT_UP		"up"
+#define COMM_MQTT_DOWN		"down"
 
 void mqtt_app_init(void);
 void mqtt_app_start(void);

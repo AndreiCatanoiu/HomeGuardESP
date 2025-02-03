@@ -181,7 +181,7 @@ void wifi_task_events(WIFI_STATES new_state)
             break;
         case CONNECTED:
             ESP_LOGI(TAG, "Wifi connected");
-            //mqtt_app_start();
+            mqtt_app_start();
             wifi_details.state = new_state;
             break;
         case DISCONNECTING:
@@ -242,6 +242,7 @@ void wifi_task(void *pvParameters)
             case DISCONNECTING:
                 if (esp_log_timestamp() - wifi_details.down_timestamp <= 60 * 1000)
                 {
+				    mqtt_app_stop();
                     ESP_LOGI(TAG, "Wifi disconnected, reconnecting ...");
                     xEventGroupClearBits(wifi_event_group, CONNECTED_BIT | DISCONNECTED_BIT);
                     esp_wifi_connect();
@@ -269,7 +270,6 @@ void wifi_task(void *pvParameters)
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
-
 
 bool is_wifi_connected()
 {
