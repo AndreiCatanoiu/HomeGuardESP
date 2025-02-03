@@ -7,6 +7,11 @@
 #include "mq2_module.h"
 
 const static char *TAG = "MQ2";
+
+static uint16_t SAFE_LEVEL = 1000;
+static uint16_t CAUTION_LEVEL = 2000;
+static uint16_t WARNING_LEVEL = 3000;
+
 const static char *MSG_SAFE = "Safe - Low gas concentration.";
 const static char *MSG_CAUTION = "Caution - Moderate gas concentration.";
 const static char *MSG_WARNING = "Warning - High gas concentration!";

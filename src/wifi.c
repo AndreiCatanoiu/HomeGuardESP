@@ -18,6 +18,7 @@
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
 #include <lwip/netdb.h>
+#include <settings.h>
 
 typedef enum
 {
@@ -50,9 +51,8 @@ static WifiDetails_t wifi_details;
 // List of access points to connect to
 static WifiAp_t APs[] = 
 {
-    (WifiAp_t){.ssid = "Your SSID", .pass = "Your Password" },
     (WifiAp_t){.ssid = "TotalRom_2.4G", .pass = "12345678" },
-    (WifiAp_t){.ssid = "TotalRom_5G", .pass = "12345678" },
+    (WifiAp_t){.ssid = (char*)s_settings.wifi_ssid , .pass = s_settings.wifi_pass },
 };
 static uint8_t APs_count;
 

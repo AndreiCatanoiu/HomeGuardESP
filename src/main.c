@@ -5,8 +5,7 @@
 #include "sensor_selector.h"
 #include "wifi.h"
 #include "mqtt_comm.h"
-
-static uint16_t sensor_id = 120;
+#include "settings.h"
 
 void system_init()
 {
@@ -21,6 +20,7 @@ void system_init()
 void app_main()
 {
     system_init();
+    settings_init();
     xTaskCreate(&wifi_task, "wifi_task", 4096, NULL, 5, NULL);
-    xTaskCreate(&sensor_selector_task, "sensor_selector_task", 2048, &sensor_id, 5, NULL);
+    xTaskCreate(&sensor_selector_task, "sensor_selector_task", 4096, &(s_settings.sensor_id), 5, NULL);
 }
