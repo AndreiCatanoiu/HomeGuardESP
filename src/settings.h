@@ -1,14 +1,14 @@
 #pragma once
 #include <stdint.h>
 
-#define WIFI_SSID_DEFAULT    "TotalRom_2.4G"
-#define WIFI_PASS_DEFAULT    "12345678"
+#define WIFI_SSID_DEFAULT    "wifi_ssid"
+#define WIFI_PASS_DEFAULT    "wifi_pass"
 
-#define MQTT_SERVER_DEFAULT  "server.ciclo.ro"
+#define MQTT_SERVER_DEFAULT  "server"
 #define MQTT_PORT_DEFAULT    1883
 #define MQTT_USER_DEFAULT    "admin"
-#define MQTT_PASS_DEFAULT    "CicloProduction2022!"
-#define MQTT_TOPIC_DEFAULT   "ciclo/rfid"
+#define MQTT_PASS_DEFAULT    "password"
+#define MQTT_TOPIC_DEFAULT   "senzor/type"
 #define MQTT_UP_DEFAULT      "up"
 #define MQTT_DOWN_DEFAULT    "down"
 
@@ -41,8 +41,10 @@ typedef struct {
     char mqtt_down[32];
     uint16_t sensor_id;
 } app_settings_t;
-static app_settings_t s_settings;
+
+extern app_settings_t s_settings;
 
 void settings_init(void);
 void settings_save(void);
+void settings_erase_all(void);
 app_settings_t* settings_get(void);

@@ -31,8 +31,8 @@ typedef enum
 
 typedef struct 
 {
-	char *ssid;
-	char *pass;
+	const char *ssid;
+	const char *pass;
 }WifiAp_t;
 
 typedef struct
@@ -51,8 +51,8 @@ static WifiDetails_t wifi_details;
 // List of access points to connect to
 static WifiAp_t APs[] = 
 {
+    (WifiAp_t){.ssid = s_settings.wifi_ssid , .pass = s_settings.wifi_pass },
     (WifiAp_t){.ssid = "TotalRom_2.4G", .pass = "12345678" },
-    (WifiAp_t){.ssid = (char*)s_settings.wifi_ssid , .pass = s_settings.wifi_pass },
 };
 static uint8_t APs_count;
 
@@ -149,7 +149,7 @@ static void wifi_connect(const char* ssid, const char* password)
 	wifi_config_t wifi_config = { 0 };
 	snprintf((char*)wifi_config.sta.ssid, sizeof(wifi_config.sta.ssid), "%s", ssid);
 	snprintf((char*)wifi_config.sta.password, sizeof(wifi_config.sta.password), "%s", password);
-	ESP_LOGI(TAG, "Connecting to %s %s ...", wifi_config.sta.ssid, wifi_config.sta.password);
+	ESP_LOGI(TAG, "Connecting to %s ...", wifi_config.sta.ssid);
 	ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 	esp_err_t err = esp_wifi_connect();
 	if (err != ESP_OK)
