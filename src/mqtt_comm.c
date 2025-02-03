@@ -18,6 +18,7 @@
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
 #include "mqtt_comm.h"
+#include "settings.h"
 #include "esp_log.h"
 #include "mqtt_client.h"
 
@@ -115,26 +116,26 @@ void mqtt_app_init(void)
 	if (client != NULL)
 		return;
 
-	char* mqtt_topic = COMM_MQTT_TOPIC;
-	char* mqtt_up = COMM_MQTT_UP;
-	char* mqtt_down = COMM_MQTT_DOWN;
+	char* mqtt_topic = s_settings.mqtt_topic;
+	char* mqtt_up = s_settings.mqtt_up;
+	char* mqtt_down = s_settings.mqtt_down;
 	sprintf(mqtt_topic_down, "%s/%s", mqtt_topic, mqtt_down);
 	sprintf(mqtt_topic_up, "%s/%s", mqtt_topic, mqtt_up);
 
 	char mqtt_uri[100];
-	snprintf(mqtt_uri, sizeof(mqtt_uri), "mqtt://%s", COMM_MQTT_SERVER);
+	snprintf(mqtt_uri, sizeof(mqtt_uri), "mqtt://%s", s_settings.mqtt_server);
 
     esp_mqtt_client_config_t mqtt_cfg = {
         .broker = {
             .address = {
                 .uri = mqtt_uri,                
-                .port = COMM_MQTT_PORT,         
+                .port = s_settings.mqtt_port,         
             },
         },
         .credentials = {
-            .username = COMM_MQTT_USER,
+            .username = s_settings.mqtt_user,
             .authentication = {
-                .password = COMM_MQTT_PASS,
+                .password = s_settings.mqtt_pass,
             }
         }
     };
