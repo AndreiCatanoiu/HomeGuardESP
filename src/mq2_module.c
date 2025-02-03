@@ -34,9 +34,14 @@ static void mq2_analog_config()
     ESP_LOGI(TAG, "Analog sensor configured on GPIO %d", MQ2_SENSOR_ANALOG_GPIO);
 }
 
+void mq2_config()
+{
+    mq2_digital_config();
+    mq2_analog_config();
+}
+
 static void interpret_gas_level(int analog_value)
 {
-    
     if (analog_value < SAFE_LEVEL)
     {
         ESP_LOGI(TAG, "Analog gas level: %d - %s", analog_value, MSG_SAFE);
@@ -55,29 +60,21 @@ static void interpret_gas_level(int analog_value)
     }
 }
 
-void mq2_task()
+void mq2_process_data()
 {
-    mq2_digital_config();
-    mq2_analog_config();
-
     int digital_state;
     int analog_value;
 
-    while (1)
+    digital_state = gpio_get_level(MQ2_SENSOR_DIGITAL_GPIO);
+    if (digital_state == 0)
     {
-        digital_state = gpio_get_level(MQ2_SENSOR_DIGITAL_GPIO);
-        if (digital_state == 0)
-        {
-            ESP_LOGW(TAG, "Gas detected (Digital)!");
-        }
-        else
-        {
-            ESP_LOGI(TAG, "No gas detected. (Digital)");
-        }
-
-        analog_value = adc1_get_raw(ADC1_CHANNEL_6);
-        interpret_gas_level(analog_value);
-
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        ESP_LOGW(TAG, "Gas detected (Digital)!");
     }
+    else
+    {
+        ESP_LOGI(TAG, "No gas detected. (Digital)");
+    }
+
+    analog_value = adc1_get_raw(ADC1_CHANNEL_6);
+    interpret_gas_level(analog_value);
 }

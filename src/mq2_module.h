@@ -7,6 +7,7 @@
 #define CAUTION_LEVEL 2000
 #define WARNING_LEVEL 3000
 
-void mq2_task(); 
+void mq2_config();
+void mq2_process_data();
 
 #endif

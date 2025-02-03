@@ -3,6 +3,7 @@
 
 #define PIR_SENSOR_GPIO GPIO_NUM_19
 
-void pir_task(); 
+void pir_config();
+void pir_process_data();
 
 #endif
