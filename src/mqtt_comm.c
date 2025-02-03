@@ -1,4 +1,4 @@
-/*#include <stdio.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -17,7 +17,7 @@
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
-
+#include "mqtt_comm.h"
 #include "esp_log.h"
 #include "mqtt_client.h"
 
@@ -60,7 +60,7 @@ void mqtt_app_send(char* data, size_t len)
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
-	ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
+	ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%ld", base, event_id);
 	esp_mqtt_event_handle_t event = event_data;
 	esp_mqtt_client_handle_t client = event->client;
 	int msg_id;
@@ -70,11 +70,6 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
             ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
             mqtt_connected = true;
             msg_id = esp_mqtt_client_subscribe(client, mqtt_topic_down, 0);
-
-            char server_inform[200];
-            size_t server_inform_len = snprintf(server_inform, sizeof(server_inform), "Firmware: %s", getCompileDateTime());
-            mqtt_app_send(server_inform, server_inform_len);
-            
 
             ESP_LOGI(TAG, "Sent subscribe: topic=%s msg_id=%d", mqtt_topic_down, msg_id);
             break;
@@ -97,8 +92,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         case MQTT_EVENT_DATA:
             ESP_LOGI(TAG, "MQTT_EVENT_DATA");
             ESP_LOGD(TAG, "New MQTT data: topic: %.*s", event->topic_len, event->topic);
-            event->data[event->data_len] = 0;	
-            decode(event->data, event->data_len, WIFI_MQTT);
+            event->data[event->data_len] = 0;
             break;
         case MQTT_EVENT_ERROR:
             ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
@@ -121,23 +115,29 @@ void mqtt_app_init(void)
 	if (client != NULL)
 		return;
 
-	char* mqtt_topic = (char*)settings_get_str(0xff, COMM_SETTING_STR, COMM_MQTT_TOPIC, 0);
-	char* mqtt_up = (char*)settings_get_str(0xff, COMM_SETTING_STR, COMM_MQTT_UP, 0);
-	char* mqtt_down = (char*)settings_get_str(0xff, COMM_SETTING_STR, COMM_MQTT_DOWN, 0);
-	sprintf(mqtt_topic_down, "%s/%s/%s", mqtt_topic, mqtt_down,get_wifi_mac_string());
-	sprintf(mqtt_topic_up, "%s/%s/%s", mqtt_topic, mqtt_up,get_wifi_mac_string());
+	char* mqtt_topic = COMM_MQTT_TOPIC;
+	char* mqtt_up = COMM_MQTT_UP;
+	char* mqtt_down = COMM_MQTT_DOWN;
+	sprintf(mqtt_topic_down, "%s/%s", mqtt_topic, mqtt_down);
+	sprintf(mqtt_topic_up, "%s/%s", mqtt_topic, mqtt_up);
 
 	char mqtt_uri[100];
-	snprintf(mqtt_uri, sizeof(mqtt_uri), "mqtt://%s", (char*)settings_get_str(0xff, COMM_SETTING_STR, COMM_MQTT_SERVER, 0));
+	snprintf(mqtt_uri, sizeof(mqtt_uri), "mqtt://%s", COMM_MQTT_SERVER);
 
-	
-	esp_mqtt_client_config_t mqtt_cfg = {
-		.uri = mqtt_uri,
-		.port = *(uint16_t*)settings_get_str(0x2, COMM_SETTING_STR, COMM_MQTT_PORT, 0),
-		.username = (char*)settings_get_str(0xff, COMM_SETTING_STR, COMM_MQTT_USER, 0),
-		.password = (char*)settings_get_str(0xff, COMM_SETTING_STR, COMM_MQTT_PASS, 0),
-		.skip_cert_common_name_check = false,
-	};
+    esp_mqtt_client_config_t mqtt_cfg = {
+        .broker = {
+            .address = {
+                .uri = mqtt_uri,                
+                .port = COMM_MQTT_PORT,         
+            },
+        },
+        .credentials = {
+            .username = COMM_MQTT_USER,
+            .authentication = {
+                .password = COMM_MQTT_PASS,
+            }
+        }
+    };
 
 	client = esp_mqtt_client_init(&mqtt_cfg);
 	esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
@@ -153,4 +153,3 @@ void mqtt_app_stop(void)
 {
 	esp_mqtt_client_stop(client);
 }
-*/
