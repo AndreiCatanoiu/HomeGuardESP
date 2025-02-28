@@ -27,8 +27,8 @@ static bool mqtt_connected = false;
 static bool mqtt_subscribed = false;
 
 static esp_mqtt_client_handle_t client;
-static char mqtt_topic_up[100];
-static char mqtt_topic_down[100];
+static char mqtt_topic_up[300];
+static char mqtt_topic_down[300];
 
 static void log_error_if_nonzero(const char *message, int error_code)
 {
@@ -122,7 +122,7 @@ void mqtt_app_init(void)
 	sprintf(mqtt_topic_down, "%s/%s", mqtt_topic, mqtt_down);
 	sprintf(mqtt_topic_up, "%s/%s", mqtt_topic, mqtt_up);
 
-	char mqtt_uri[100];
+	char mqtt_uri[150];
 	snprintf(mqtt_uri, sizeof(mqtt_uri), "mqtt://%s", s_settings.mqtt_server);
 
     esp_mqtt_client_config_t mqtt_cfg = {

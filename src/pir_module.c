@@ -4,6 +4,8 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "pir_module.h"
+#include "string.h" 
+#include "mqtt_comm.h"
 
 const static char *TAG = "PIR";
 
@@ -28,7 +30,9 @@ void pir_process_data()
     
     if (pir_state == 1)
     {
-        ESP_LOGW(TAG, "Motion detected!");
+        char* message = "Motion detected!";
+        ESP_LOGW(TAG,"%s",message);
+        mqtt_app_send(message,strlen(message));
     }
     else
     {

@@ -5,6 +5,8 @@
 #include "driver/adc.h"
 #include "esp_log.h"
 #include "mq2_module.h"
+#include "string.h"
+#include "mqtt_comm.h"
 
 const static char *TAG = "MQ2";
 
@@ -58,10 +60,12 @@ static void interpret_gas_level(int analog_value)
     else if (analog_value < WARNING_LEVEL)
     {
         ESP_LOGW(TAG, "Analog gas level: %d - %s", analog_value, MSG_WARNING);
+        mqtt_app_send(MSG_WARNING,strlen(MSG_WARNING));
     }
     else
     {
         ESP_LOGE(TAG, "Analog gas level: %d - %s", analog_value, MSG_DANGER);
+        mqtt_app_send(MSG_DANGER,strlen(MSG_DANGER));
     }
 }
 
