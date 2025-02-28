@@ -201,7 +201,6 @@ void settings_erase_all(void)
         return;
     }
 
-    // Șterge toate cheile din namespace-ul curent
     err = nvs_erase_all(handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error erasing NVS: %s", esp_err_to_name(err));
@@ -209,7 +208,6 @@ void settings_erase_all(void)
         ESP_LOGI(TAG, "NVS namespace '%s' erased successfully", NVS_NAMESPACE);
     }
 
-    // Commit pentru a salva schimbările
     err = nvs_commit(handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error committing NVS erase: %s", esp_err_to_name(err));
