@@ -6,6 +6,7 @@
 #include "pir_module.h"
 #include "string.h" 
 #include "mqtt_comm.h"
+#include "system_time.h"
 
 const static char *TAG = "PIR";
 
@@ -30,9 +31,11 @@ void pir_process_data()
     
     if (pir_state == 1)
     {
-        char* message = "Motion detected!";
-        ESP_LOGW(TAG,"%s",message);
-        mqtt_app_send(message,strlen(message));
+        char* timestr = actual_time_string();
+        char msg_motion[200] ;
+        sprintf(msg_motion, "Motion detected! \n%s", timestr);
+        ESP_LOGE(TAG, "%s", msg_motion);
+        mqtt_app_send(msg_motion,strlen(msg_motion));
     }
     else
     {

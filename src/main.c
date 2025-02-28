@@ -6,6 +6,7 @@
 #include "wifi.h"
 #include "mqtt_comm.h"
 #include "settings.h"
+#include "system_time.h"
 
 void system_init()
 {
@@ -22,5 +23,6 @@ void app_main()
     system_init();
     settings_init();
     xTaskCreate(&wifi_task, "wifi_task", 4096, NULL, 5, NULL);
+    time_setup();
     xTaskCreate(&sensor_selector_task, "sensor_selector_task", 4096, &(s_settings.sensor_id), 5, NULL);
 }
