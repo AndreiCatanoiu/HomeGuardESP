@@ -25,4 +25,5 @@ void app_main()
     xTaskCreate(&wifi_task, "wifi_task", 4096, NULL, 5, NULL);
     time_setup();
     xTaskCreate(&sensor_selector_task, "sensor_selector_task", 4096, &(s_settings.sensor_id), 5, NULL);
+    xTaskCreate(&is_device_available, "is_device_available", 4096, NULL, 5, NULL);
 }

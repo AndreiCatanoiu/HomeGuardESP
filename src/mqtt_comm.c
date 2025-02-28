@@ -27,7 +27,6 @@ static bool mqtt_connected = false;
 static bool mqtt_subscribed = false;
 
 static esp_mqtt_client_handle_t client;
-static char mqtt_topic_up[300];
 static char mqtt_topic_down[300];
 
 static void log_error_if_nonzero(const char *message, int error_code)
@@ -50,14 +49,26 @@ uint8_t mqtt_issubscribed()
 	return false;
 }
 
-void mqtt_app_send(char* data, size_t len)
+void mqtt_app_send(char* data, size_t len, const char* mqtt_up)
 {
 	if (mqtt_isconnected()==true)
 	{
+        char mqtt_topic_up[300];
+        sprintf(mqtt_topic_up, "%s/%s", s_settings.mqtt_topic, mqtt_up);
 		int msg_id = esp_mqtt_client_publish(client, mqtt_topic_up, data, len, 0, 0);
 		ESP_LOGD(TAG, "sent publish successful, msg_id=%d", msg_id);
 	}
 }
+
+void is_device_available(void *pvParameter)
+{
+    while (1)
+    {
+        mqtt_app_send("ping", 4, "available");
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
+
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
@@ -120,7 +131,6 @@ void mqtt_app_init(void)
 	char* mqtt_up = s_settings.mqtt_up;
 	char* mqtt_down = s_settings.mqtt_down;
 	sprintf(mqtt_topic_down, "%s/%s", mqtt_topic, mqtt_down);
-	sprintf(mqtt_topic_up, "%s/%s", mqtt_topic, mqtt_up);
 
 	char mqtt_uri[150];
 	snprintf(mqtt_uri, sizeof(mqtt_uri), "mqtt://%s", s_settings.mqtt_server);

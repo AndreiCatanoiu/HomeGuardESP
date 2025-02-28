@@ -7,6 +7,7 @@
 #include "string.h" 
 #include "mqtt_comm.h"
 #include "system_time.h"
+#include "settings.h"
 
 const static char *TAG = "PIR";
 
@@ -35,7 +36,7 @@ void pir_process_data()
         char msg_motion[200] ;
         sprintf(msg_motion, "Motion detected! \n%s", timestr);
         ESP_LOGE(TAG, "%s", msg_motion);
-        mqtt_app_send(msg_motion,strlen(msg_motion));
+        mqtt_app_send(msg_motion,strlen(msg_motion),MQTT_UP_DEFAULT);
     }
     else
     {
