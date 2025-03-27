@@ -4,10 +4,10 @@
 #define WIFI_SSID_DEFAULT    "TotalRom_2.4GHz"
 #define WIFI_PASS_DEFAULT    "totalrom"
 
-#define MQTT_SERVER_DEFAULT  "broker.hivemq.com"
+#define MQTT_SERVER_DEFAULT  "catanoiulicenta.ddns.net"
 #define MQTT_PORT_DEFAULT    1883
 #define MQTT_USER_DEFAULT    "admin"
-#define MQTT_PASS_DEFAULT    "LicentaSmartHouse2024!"
+#define MQTT_PASS_DEFAULT    "admin"
 #define MQTT_TOPIC_DEFAULT   "senzor/licenta/andrei/catanoiu/type"
 #define MQTT_UP_DEFAULT      "up"
 #define MQTT_DOWN_DEFAULT    "down"
