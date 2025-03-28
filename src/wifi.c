@@ -53,7 +53,6 @@ static WifiDetails_t wifi_details;
 static WifiAp_t APs[] = 
 {
     (WifiAp_t){.ssid = s_settings.wifi_ssid , .pass = s_settings.wifi_pass },
-    (WifiAp_t){.ssid = "TotalRom_2.4G", .pass = "12345678" },
 };
 static uint8_t APs_count;
 
