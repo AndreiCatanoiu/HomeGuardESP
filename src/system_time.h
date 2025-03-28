@@ -1,5 +1,5 @@
-#ifndef SYSTEM_TIME_H
-#define SYSTEM_TIME_H
+#ifndef __SYSTEM_TIME_H__
+#define __SYSTEM_TIME_H__
 
 #include <stdint.h>
 #include <time.h>
