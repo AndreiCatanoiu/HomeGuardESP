@@ -6,6 +6,7 @@
 #include "wifi.h"
 #include "mqtt_comm.h"
 #include "settings.h"
+#include "decoder.h"
 
 void system_init()
 {
@@ -16,6 +17,7 @@ void system_init()
     }
     ESP_ERROR_CHECK(ret); 
     settings_init();
+    decoder_init();
 }
 
 void app_main()
@@ -24,8 +26,5 @@ void app_main()
     xTaskCreate(&wifi_task, "wifi_task", 4096, NULL, 5, NULL);
     xTaskCreate(&sensor_selector_task, "sensor_selector_task", 4096, &(s_settings.sensor_id), 5, NULL);
     xTaskCreate(&is_device_available, "is_device_available", 4096, NULL, 5, NULL);
-
-    sensor_status_t new_status = SENSOR_STATUS_MAINTENANCE;
-    settings_set(KEY_SENSOR_STATUS, &new_status, sizeof(new_status), false);
-
+    xTaskCreate(&command_task, "command_task", 4096, NULL, 5, NULL);
 }
