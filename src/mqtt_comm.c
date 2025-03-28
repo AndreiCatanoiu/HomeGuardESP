@@ -65,16 +65,18 @@ void is_device_available(void *pvParameter)
 {
     while (1)
     {
+        const char availity[16];
         if (s_settings.status == SENSOR_STATUS_UP)
-        {
+        {   
             ESP_LOGI(TAG, "Device is available");
-            mqtt_app_send("alive", 4, "availity");
+            strcpy(availity,"alive");
         }
         else if (s_settings.status == SENSOR_STATUS_MAINTENANCE)
         {
             ESP_LOGI(TAG, "Device is in maintenance mode");
-            mqtt_app_send("maintenance", 4, "availity");
+            strcpy(availity,"maintenance");
         }
+        mqtt_app_send(availity, strlen(availity)+1, "availity");
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }

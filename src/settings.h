@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 typedef enum {
-    SENSOR_STATUS_DOWN = 0,
+    SENSOR_STATUS_DOWN=0,
     SENSOR_STATUS_UP,
     SENSOR_STATUS_MAINTENANCE,
 } sensor_status_t;

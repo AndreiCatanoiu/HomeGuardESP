@@ -24,4 +24,8 @@ void app_main()
     xTaskCreate(&wifi_task, "wifi_task", 4096, NULL, 5, NULL);
     xTaskCreate(&sensor_selector_task, "sensor_selector_task", 4096, &(s_settings.sensor_id), 5, NULL);
     xTaskCreate(&is_device_available, "is_device_available", 4096, NULL, 5, NULL);
+
+    sensor_status_t new_status = SENSOR_STATUS_MAINTENANCE;
+    settings_set(KEY_SENSOR_STATUS, &new_status, sizeof(new_status), false);
+
 }
