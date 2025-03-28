@@ -1,6 +1,12 @@
 #pragma once
 #include <stdint.h>
 
+typedef enum {
+    SENSOR_STATUS_DOWN=0,
+    SENSOR_STATUS_UP,
+    SENSOR_STATUS_MAINTENANCE,
+} sensor_status_t;
+
 #define WIFI_SSID_DEFAULT    "TotalRom_2.4GHz"
 #define WIFI_PASS_DEFAULT    "totalrom"
 
@@ -12,7 +18,8 @@
 #define MQTT_UP_DEFAULT      "up"
 #define MQTT_DOWN_DEFAULT    "down"
 
-#define SENSOR_ID_DEFAULT    120
+#define SENSOR_ID_DEFAULT    1
+#define SENSOR_STATUS_DEFAULT  SENSOR_STATUS_UP
 
 #define NVS_NAMESPACE "app_settings"
 
@@ -28,6 +35,7 @@
 #define COMM_MQTT_DOWN    "mqtt_down"
 
 #define KEY_SENSOR_ID    "sensor_id"
+#define KEY_SENSOR_STATUS "sensor_status"
 
 typedef struct {
     char wifi_ssid[32];
@@ -40,6 +48,7 @@ typedef struct {
     char mqtt_up[32];
     char mqtt_down[32];
     uint16_t sensor_id;
+    sensor_status_t status;
 } app_settings_t;
 
 extern app_settings_t s_settings;

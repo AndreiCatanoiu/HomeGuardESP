@@ -13,6 +13,7 @@
 #include "nvs_flash.h"
 #include "mqtt_comm.h"
 #include "esp_system.h"
+#include "system_time.h"
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
@@ -92,6 +93,8 @@ static void ip_event_handler(int32_t event_id, void* event_data)
             memcpy(wifi_details.ip, &event->ip_info.ip, sizeof(wifi_details.ip));
             xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
             xEventGroupClearBits(wifi_event_group, DISCONNECTED_BIT);
+            
+            time_setup();
             break;
         default:
             ESP_LOGW(TAG, "IP_EVENT_STA_UNKNOWN %ld", event_id);

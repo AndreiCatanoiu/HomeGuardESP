@@ -13,6 +13,7 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
+#include "settings.h"
 
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
@@ -64,11 +65,21 @@ void is_device_available(void *pvParameter)
 {
     while (1)
     {
-        mqtt_app_send("ping", 4, "available");
+        const char availity[16];
+        if (s_settings.status == SENSOR_STATUS_UP)
+        {   
+            ESP_LOGI(TAG, "Device is available");
+            strcpy(availity,"alive");
+        }
+        else if (s_settings.status == SENSOR_STATUS_MAINTENANCE)
+        {
+            ESP_LOGI(TAG, "Device is in maintenance mode");
+            strcpy(availity,"maintenance");
+        }
+        mqtt_app_send(availity, strlen(availity)+1, "availity");
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
-
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
@@ -105,6 +116,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
             ESP_LOGI(TAG, "MQTT_EVENT_DATA");
             ESP_LOGD(TAG, "New MQTT data: topic: %.*s", event->topic_len, event->topic);
             event->data[event->data_len] = 0;
+            ESP_LOGD(TAG, "New MQTT data: data: %.*s", event->data_len, event->data);
+            //trimitere catre decoder  
             break;
         case MQTT_EVENT_ERROR:
             ESP_LOGI(TAG, "MQTT_EVENT_ERROR");

@@ -9,6 +9,17 @@
 static const char *TAG = "SETTINGS";
 app_settings_t s_settings;
 
+static sensor_status_t string_to_enum(const char *str) {
+    if (strcmp(str, "UP") == 0) {
+        return SENSOR_STATUS_UP;
+    } else if (strcmp(str, "DOWN") == 0) {
+        return SENSOR_STATUS_DOWN;
+    } else if (strcmp(str, "MAINTENANCE") == 0) {
+        return SENSOR_STATUS_MAINTENANCE;
+    }
+    return SENSOR_STATUS_DOWN; 
+}
+
 static void load_defaults(void)
 {
     strncpy(s_settings.wifi_ssid, WIFI_SSID_DEFAULT, sizeof(s_settings.wifi_ssid));
@@ -21,6 +32,7 @@ static void load_defaults(void)
     strncpy(s_settings.mqtt_up, MQTT_UP_DEFAULT, sizeof(s_settings.mqtt_up));
     strncpy(s_settings.mqtt_down, MQTT_DOWN_DEFAULT, sizeof(s_settings.mqtt_down));
     s_settings.sensor_id = SENSOR_ID_DEFAULT;
+    s_settings.status = SENSOR_STATUS_DEFAULT;
 }
 
 void print_all_settings(void){
@@ -35,6 +47,11 @@ void print_all_settings(void){
     ESP_LOGI(TAG, "MQTT Up: %s", s_settings.mqtt_up);
     ESP_LOGI(TAG, "MQTT Down: %s", s_settings.mqtt_down);
     ESP_LOGI(TAG, "Sensor ID: %d", s_settings.sensor_id);
+    const char *status_str = (s_settings.status == SENSOR_STATUS_UP) ? "UP" :
+                              (s_settings.status == SENSOR_STATUS_DOWN) ? "DOWN" :
+                              (s_settings.status == SENSOR_STATUS_MAINTENANCE) ? "MAINTENANCE" :
+                              "UNKNOWN";
+    ESP_LOGI(TAG, "Sensor STATUS: %s", status_str);
 }
 
 void settings_init(void)
@@ -136,8 +153,15 @@ void settings_init(void)
         changes = true;
     }
 
-    print_all_settings();
+    size_t status_size = sizeof(s_settings.status);
+    err = nvs_get_u16(handle, KEY_SENSOR_STATUS, &s_settings.status);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "Key %s not found; using default value", KEY_SENSOR_STATUS);
+        s_settings.status = SENSOR_STATUS_DEFAULT;
+        changes = true;
+    }
 
+    print_all_settings();
     nvs_close(handle);
     
     if (changes)
@@ -183,6 +207,9 @@ void settings_save(void)
     
     err = nvs_set_u16(handle, KEY_SENSOR_ID, s_settings.sensor_id);
     if (err != ESP_OK) ESP_LOGE(TAG, "Error saving SENSOR ID");
+    
+    err = nvs_set_u16(handle, KEY_SENSOR_STATUS, s_settings.status);
+    if (err != ESP_OK) ESP_LOGE(TAG, "Error saving sensor status");
 
     err = nvs_commit(handle);
     if (err != ESP_OK) 
@@ -192,10 +219,9 @@ void settings_save(void)
     {
         ESP_LOGI(TAG, "Settings saved to flash. Restarting ESP...");
     }
-    esp_restart();
     nvs_close(handle);
+    esp_restart();
 }
-
 
 esp_err_t settings_set(const char *key, void *value, size_t size, bool is_string)
 {
@@ -268,10 +294,19 @@ esp_err_t settings_set(const char *key, void *value, size_t size, bool is_string
     {
         s_settings.sensor_id = *(uint16_t *)value;
     }
-
+    else if (strcmp(key, KEY_SENSOR_STATUS) == 0) 
+    {
+        if (is_string) 
+        {
+            s_settings.status = string_to_enum((char *)value);
+        } 
+        else 
+        {
+            s_settings.status = *((sensor_status_t *)value);
+        }
+    }
+    
     ESP_LOGI(TAG, "Setting %s updated successfully", key);
-
-    // Salvează toate setările în NVS și repornește ESP-ul
     settings_save();
 
     return ESP_OK;
