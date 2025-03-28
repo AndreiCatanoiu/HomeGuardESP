@@ -35,6 +35,7 @@ void print_all_settings(void){
     ESP_LOGI(TAG, "MQTT Up: %s", s_settings.mqtt_up);
     ESP_LOGI(TAG, "MQTT Down: %s", s_settings.mqtt_down);
     ESP_LOGI(TAG, "Sensor ID: %d", s_settings.sensor_id);
+    ESP_LOGI(TAG, "Sensor STATUS: %d", s_settings.status);
 }
 
 void settings_init(void)
@@ -136,8 +137,15 @@ void settings_init(void)
         changes = true;
     }
 
-    print_all_settings();
+    err = nvs_set_blob(handle, KEY_SENSOR_STATUS, &s_settings.status, sizeof(s_settings.status));
+    if (err != ESP_OK) 
+    {
+        ESP_LOGW(TAG, "Key %s not found; using default value", KEY_SENSOR_STATUS);
+        s_settings.status = SENSOR_STATUS_DEFAULT;
+        changes = true;
+    }
 
+    print_all_settings();
     nvs_close(handle);
     
     if (changes)
@@ -183,6 +191,9 @@ void settings_save(void)
     
     err = nvs_set_u16(handle, KEY_SENSOR_ID, s_settings.sensor_id);
     if (err != ESP_OK) ESP_LOGE(TAG, "Error saving SENSOR ID");
+    
+    err = nvs_set_blob(handle, KEY_SENSOR_STATUS, &s_settings.status, sizeof(s_settings.status));
+    if (err != ESP_OK) ESP_LOGE(TAG, "Error saving sensor status");
 
     err = nvs_commit(handle);
     if (err != ESP_OK) 
@@ -195,7 +206,6 @@ void settings_save(void)
     esp_restart();
     nvs_close(handle);
 }
-
 
 esp_err_t settings_set(const char *key, void *value, size_t size, bool is_string)
 {
@@ -268,10 +278,12 @@ esp_err_t settings_set(const char *key, void *value, size_t size, bool is_string
     {
         s_settings.sensor_id = *(uint16_t *)value;
     }
-
+    else if (strcmp(key, KEY_SENSOR_STATUS) == 0)
+    {
+        s_settings.status = *(sensor_status_t *)value;
+    }
+    
     ESP_LOGI(TAG, "Setting %s updated successfully", key);
-
-    // Salvează toate setările în NVS și repornește ESP-ul
     settings_save();
 
     return ESP_OK;

@@ -13,6 +13,7 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
+#include "settings.h"
 
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
@@ -64,11 +65,19 @@ void is_device_available(void *pvParameter)
 {
     while (1)
     {
-        mqtt_app_send("ping", 4, "available");
+        if (s_settings.status == SENSOR_STATUS_UP)
+        {
+            ESP_LOGI(TAG, "Device is available");
+            mqtt_app_send("alive", 4, "availity");
+        }
+        else if (s_settings.status == SENSOR_STATUS_MAINTENANCE)
+        {
+            ESP_LOGI(TAG, "Device is in maintenance mode");
+            mqtt_app_send("maintenance", 4, "availity");
+        }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
-
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
