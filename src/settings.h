@@ -46,5 +46,5 @@ extern app_settings_t s_settings;
 
 void settings_init(void);
 void settings_save(void);
-void settings_erase_all(void);
-app_settings_t* settings_get(void);
+void print_all_settings(void);
+esp_err_t settings_set(const char *key, void *value, size_t size, bool is_string);

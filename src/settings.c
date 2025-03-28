@@ -23,6 +23,20 @@ static void load_defaults(void)
     s_settings.sensor_id = SENSOR_ID_DEFAULT;
 }
 
+void print_all_settings(void){
+    ESP_LOGI(TAG, "Current settings:");
+    ESP_LOGI(TAG, "WiFi SSID: %s", s_settings.wifi_ssid);
+    ESP_LOGI(TAG, "WiFi PASS: %s", s_settings.wifi_pass);
+    ESP_LOGI(TAG, "MQTT Server: %s", s_settings.mqtt_server);
+    ESP_LOGI(TAG, "MQTT Port: %d", s_settings.mqtt_port);
+    ESP_LOGI(TAG, "MQTT User: %s", s_settings.mqtt_user);
+    ESP_LOGI(TAG, "MQTT Pass: %s", s_settings.mqtt_pass);
+    ESP_LOGI(TAG, "MQTT Topic: %s", s_settings.mqtt_topic);
+    ESP_LOGI(TAG, "MQTT Up: %s", s_settings.mqtt_up);
+    ESP_LOGI(TAG, "MQTT Down: %s", s_settings.mqtt_down);
+    ESP_LOGI(TAG, "Sensor ID: %d", s_settings.sensor_id);
+}
+
 void settings_init(void)
 {
     bool changes = false;
@@ -122,19 +136,9 @@ void settings_init(void)
         changes = true;
     }
 
-    nvs_close(handle);
+    print_all_settings();
 
-    ESP_LOGI(TAG, "Current settings:");
-    ESP_LOGI(TAG, "WiFi SSID: %s", s_settings.wifi_ssid);
-    ESP_LOGI(TAG, "WiFi PASS: %s", s_settings.wifi_pass);
-    ESP_LOGI(TAG, "MQTT Server: %s", s_settings.mqtt_server);
-    ESP_LOGI(TAG, "MQTT Port: %d", s_settings.mqtt_port);
-    ESP_LOGI(TAG, "MQTT User: %s", s_settings.mqtt_user);
-    ESP_LOGI(TAG, "MQTT Pass: %s", s_settings.mqtt_pass);
-    ESP_LOGI(TAG, "MQTT Topic: %s", s_settings.mqtt_topic);
-    ESP_LOGI(TAG, "MQTT Up: %s", s_settings.mqtt_up);
-    ESP_LOGI(TAG, "MQTT Down: %s", s_settings.mqtt_down);
-    ESP_LOGI(TAG, "Sensor ID: %d", s_settings.sensor_id);
+    nvs_close(handle);
     
     if (changes)
         settings_save();
@@ -192,31 +196,83 @@ void settings_save(void)
     nvs_close(handle);
 }
 
-void settings_erase_all(void)
+
+esp_err_t settings_set(const char *key, void *value, size_t size, bool is_string)
 {
     nvs_handle_t handle;
     esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error (%s) opening NVS namespace for erasing", esp_err_to_name(err));
-        return;
+    if (err != ESP_OK) 
+    {
+        ESP_LOGE(TAG, "Error (%s) opening NVS for writing", esp_err_to_name(err));
+        return err;
     }
 
-    err = nvs_erase_all(handle);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error erasing NVS: %s", esp_err_to_name(err));
-    } else {
-        ESP_LOGI(TAG, "NVS namespace '%s' erased successfully", NVS_NAMESPACE);
+    if (is_string)
+        err = nvs_set_str(handle, key, (char *)value);
+    else
+        err = nvs_set_blob(handle, key, value, size);
+
+    if (err != ESP_OK) 
+    {
+        ESP_LOGE(TAG, "Error (%s) setting key %s", esp_err_to_name(err), key);
+        nvs_close(handle);
+        return err;
     }
 
     err = nvs_commit(handle);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error committing NVS erase: %s", esp_err_to_name(err));
+    if (err != ESP_OK) 
+    {
+        ESP_LOGE(TAG, "Error committing NVS");
+        nvs_close(handle);
+        return err;
+    }
+    nvs_close(handle);
+
+    if (strcmp(key, WIFI_SSID) == 0) 
+    {
+        strncpy(s_settings.wifi_ssid, (char *)value, sizeof(s_settings.wifi_ssid));
+    } 
+    else if (strcmp(key, WIFI_PASS) == 0) 
+    {
+        strncpy(s_settings.wifi_pass, (char *)value, sizeof(s_settings.wifi_pass));
+    } 
+    else if (strcmp(key, COMM_MQTT_SERVER) == 0) 
+    {
+        strncpy(s_settings.mqtt_server, (char *)value, sizeof(s_settings.mqtt_server));
+    } 
+    else if (strcmp(key, COMM_MQTT_PORT) == 0) 
+    {
+        s_settings.mqtt_port = *(uint16_t *)value;
+    } 
+    else if (strcmp(key, COMM_MQTT_USER) == 0) 
+    {
+        strncpy(s_settings.mqtt_user, (char *)value, sizeof(s_settings.mqtt_user));
+    } 
+    else if (strcmp(key, COMM_MQTT_PASS) == 0) 
+    {
+        strncpy(s_settings.mqtt_pass, (char *)value, sizeof(s_settings.mqtt_pass));
+    } 
+    else if (strcmp(key, COMM_MQTT_TOPIC) == 0) 
+    {
+        strncpy(s_settings.mqtt_topic, (char *)value, sizeof(s_settings.mqtt_topic));
+    } 
+    else if (strcmp(key, COMM_MQTT_UP) == 0) 
+    {
+        strncpy(s_settings.mqtt_up, (char *)value, sizeof(s_settings.mqtt_up));
+    } 
+    else if (strcmp(key, COMM_MQTT_DOWN) == 0) 
+    {
+        strncpy(s_settings.mqtt_down, (char *)value, sizeof(s_settings.mqtt_down));
+    } 
+    else if (strcmp(key, KEY_SENSOR_ID) == 0) 
+    {
+        s_settings.sensor_id = *(uint16_t *)value;
     }
 
-    nvs_close(handle);
-}
+    ESP_LOGI(TAG, "Setting %s updated successfully", key);
 
-app_settings_t* settings_get(void)
-{
-    return &s_settings;
+    // Salvează toate setările în NVS și repornește ESP-ul
+    settings_save();
+
+    return ESP_OK;
 }
