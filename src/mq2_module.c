@@ -65,7 +65,7 @@ static void interpret_gas_level(int analog_value)
         char msg_warning[200] ;
         sprintf(msg_warning, "Analog gas level: %d - %s \n%s", analog_value, MSG_WARNING, timestr);
         ESP_LOGE(TAG, "%s", msg_warning);
-        mqtt_app_send(msg_warning,strlen(msg_warning),MQTT_UP_DEFAULT);
+        mqtt_app_send(msg_warning,strlen(msg_warning),"alerts");
     }
     else
     {
@@ -73,7 +73,7 @@ static void interpret_gas_level(int analog_value)
         char msg_danger[200] ;
         sprintf(msg_danger, "Analog gas level: %d - %s \n%s", analog_value, MSG_DANGER, timestr);
         ESP_LOGE(TAG, "%s", msg_danger);
-        mqtt_app_send(msg_danger,strlen(msg_danger),MQTT_UP_DEFAULT);
+        mqtt_app_send(msg_danger,strlen(msg_danger),"alerts");
     }
 }
 
