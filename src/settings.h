@@ -10,11 +10,11 @@ typedef enum {
 #define WIFI_SSID_DEFAULT    "TotalRom_2.4GHz"
 #define WIFI_PASS_DEFAULT    "totalrom"
 
-#define MQTT_SERVER_DEFAULT  "www.andericatanoiu.ro"
+#define MQTT_SERVER_DEFAULT  "www.andreicatanoiu.ro"
 #define MQTT_PORT_DEFAULT    1883
 #define MQTT_USER_DEFAULT    "admin"
 #define MQTT_PASS_DEFAULT    "admin"
-#define MQTT_TOPIC_DEFAULT   "senzor/licenta/andrei/catanoiu/type"
+#define MQTT_TOPIC_DEFAULT   "senzor/licenta/andrei/catanoiu"
 #define MQTT_UP_DEFAULT      "up"
 #define MQTT_DOWN_DEFAULT    "down"
 
@@ -60,3 +60,4 @@ void settings_init(void);
 void settings_save(void);
 void print_all_settings(void);
 esp_err_t settings_set(const char *key, void *value, size_t size, bool is_string);
+void settings_reset(void);

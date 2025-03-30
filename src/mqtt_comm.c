@@ -56,7 +56,7 @@ void mqtt_app_send(char* data, size_t len, const char* mqtt_up)
 	if (mqtt_isconnected()==true)
 	{
         char mqtt_topic_up[300];
-        sprintf(mqtt_topic_up, "%s/%s", s_settings.mqtt_topic, mqtt_up);
+        sprintf(mqtt_topic_up, "%s/%s/%s", s_settings.mqtt_topic, s_settings.encoded_sensor_id,mqtt_up);
 		int msg_id = esp_mqtt_client_publish(client, mqtt_topic_up, data, len, 0, 0);
 		ESP_LOGD(TAG, "sent publish successful, msg_id=%d", msg_id);
 	}
@@ -66,7 +66,7 @@ void is_device_available(void *pvParameter)
 {
     while (1)
     {
-        const char availity[16];
+        static char availity[16];
         if (s_settings.status == SENSOR_STATUS_UP)
         {   
             ESP_LOGI(TAG, "Device is available");
@@ -141,8 +141,8 @@ void mqtt_app_init(void)
 	if (client != NULL)
 		return;
 
-	char* mqtt_topic = s_settings.mqtt_topic;
-	char* mqtt_up = s_settings.mqtt_up;
+	char mqtt_topic[250];
+    snprintf(mqtt_topic ,sizeof(mqtt_topic),"%s/%s", s_settings.mqtt_topic, s_settings.encoded_sensor_id);
 	char* mqtt_down = s_settings.mqtt_down;
 	sprintf(mqtt_topic_down, "%s/%s", mqtt_topic, mqtt_down);
 
