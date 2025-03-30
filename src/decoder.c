@@ -8,6 +8,7 @@
 #include "freertos/task.h"
 #include "mqtt_comm.h"
 #include "settings.h"
+#include "mbedtls/base64.h"
 
 static const char *TAG = "DECODER";
 
@@ -66,9 +67,8 @@ void decode_settings(char *args)
     }
     else if (strcmp(group, "sensor") == 0) {
         if (strcmp(tag, "id") == 0) {
-            uint16_t id = (uint16_t)atoi(value);
-            settings_set(KEY_SENSOR_ID, &id, sizeof(id), false);
-            ESP_LOGI(TAG,"Sensor ID set to: %d\n", s_settings.sensor_id);
+            settings_set(KEY_SENSOR_ID, value, strlen(value), true);
+            ESP_LOGI(TAG,"Decoded sensor ID set to: %s\n", s_settings.decoded_sensor_id);
         } else if (strcmp(tag, "status") == 0) {
             if (isdigit((unsigned char)value[0])) {
                 uint16_t status_val = (uint16_t)atoi(value);
@@ -94,6 +94,8 @@ void query_settings(char *args)
     char *group = strtok(args, " ");
     char *tag   = strtok(NULL, " ");
     
+    char query_mqtt_msg[200] ;
+
     if (!group || !tag) {
         ESP_LOGW(TAG,"Usage: settings [group] [tag]\n");
         return;
@@ -101,47 +103,68 @@ void query_settings(char *args)
     
     if (strcmp(group, "wifi") == 0) {
         if (strcmp(tag, "ssid") == 0) {
-            ESP_LOGI(TAG,"WiFi SSID: %s\n", s_settings.wifi_ssid);
+            sprintf(query_mqtt_msg, "WiFi SSID: %s\n", s_settings.wifi_ssid);
+            ESP_LOGI(TAG,"%s", query_mqtt_msg);
         } else if (strcmp(tag, "pass") == 0) {
-            ESP_LOGI(TAG,"WiFi PASS: %s\n", s_settings.wifi_pass);
+            sprintf(query_mqtt_msg, "WiFi PASS: %s\n", s_settings.wifi_pass);
+            ESP_LOGI(TAG,"%s", query_mqtt_msg);
         } else {
-            ESP_LOGE(TAG,"Unknown WiFi tag: %s\n", tag);
+            sprintf(query_mqtt_msg, "Unknown WiFi tag: %s\n", tag);
+            ESP_LOGE(TAG,"%s", query_mqtt_msg);
         }
     }
     else if (strcmp(group, "mqtt") == 0) {
         if (strcmp(tag, "server") == 0) {
-            ESP_LOGI(TAG,"MQTT Server: %s\n", s_settings.mqtt_server);
+            sprintf(query_mqtt_msg, "MQTT Server: %s\n", s_settings.mqtt_server);
+            ESP_LOGI(TAG,"%s", query_mqtt_msg);
         } else if (strcmp(tag, "port") == 0) {
-            ESP_LOGI(TAG,"MQTT Port: %d\n", s_settings.mqtt_port);
+            sprintf(query_mqtt_msg, "MQTT Port: %d\n", s_settings.mqtt_port);
+            ESP_LOGI(TAG,"%s", query_mqtt_msg);
         } else if (strcmp(tag, "user") == 0) {
-            ESP_LOGI(TAG,"MQTT User: %s\n", s_settings.mqtt_user);
+            sprintf(query_mqtt_msg, "MQTT User: %s\n", s_settings.mqtt_user);
+            ESP_LOGI(TAG,"%s", query_mqtt_msg);
         } else if (strcmp(tag, "pass") == 0) {
-            ESP_LOGI(TAG,"MQTT Pass: %s\n", s_settings.mqtt_pass);
+            sprintf(query_mqtt_msg, "MQTT Pass: %s\n", s_settings.mqtt_pass);
+            ESP_LOGI(TAG,"%s", query_mqtt_msg);
         } else if (strcmp(tag, "topic") == 0) {
-            ESP_LOGI(TAG,"MQTT Topic: %s\n", s_settings.mqtt_topic);
+            sprintf(query_mqtt_msg, "MQTT Topic: %s\n", s_settings.mqtt_topic);
+            ESP_LOGI(TAG,"%s", query_mqtt_msg);
         } else if (strcmp(tag, "up") == 0) {
-            ESP_LOGI(TAG,"MQTT Up: %s\n", s_settings.mqtt_up);
+            sprintf(query_mqtt_msg, "MQTT Up: %s\n", s_settings.mqtt_up);
+            ESP_LOGI(TAG,"%s", query_mqtt_msg);
         } else if (strcmp(tag, "down") == 0) {
-            ESP_LOGI(TAG,"MQTT Down: %s\n", s_settings.mqtt_down);
+            sprintf(query_mqtt_msg, "MQTT Down: %s\n", s_settings.mqtt_down);
+            ESP_LOGI(TAG,"%s", query_mqtt_msg);
         } else {
-            ESP_LOGW(TAG,"Unknown MQTT tag: %s\n", tag);
+            sprintf(query_mqtt_msg,"Unknown MQTT tag: %s\n", tag);
+            ESP_LOGI(TAG,"%s", query_mqtt_msg);
         }
     }
     else if (strcmp(group, "sensor") == 0) {
-        if (strcmp(tag, "id") == 0) {
-            ESP_LOGI(TAG,"Sensor ID: %d\n", s_settings.sensor_id);
-        } else if (strcmp(tag, "status") == 0) {
+        if (strcmp(tag, "id_encoded") == 0) {
+            sprintf(query_mqtt_msg, "Encoded sensor ID: %s\n", s_settings.encoded_sensor_id);
+            ESP_LOGI(TAG,"%s", query_mqtt_msg);
+        }else if (strcmp(tag, "id_decoded") == 0) {
+            sprintf(query_mqtt_msg, "Decoded sensor ID: %s\n", s_settings.decoded_sensor_id);
+            ESP_LOGI(TAG,"%s", query_mqtt_msg);
+        } 
+        else if (strcmp(tag, "status") == 0) {
             const char *status_str = (s_settings.status == SENSOR_STATUS_UP) ? "UP" :
                                       (s_settings.status == SENSOR_STATUS_DOWN) ? "DOWN" :
                                       (s_settings.status == SENSOR_STATUS_MAINTENANCE) ? "MAINTENANCE" : "UNKNOWN";
-            ESP_LOGI(TAG,"Sensor Status: %s\n", status_str);
+            sprintf(query_mqtt_msg, "Sensor Status: %s\n", status_str);
+            ESP_LOGI(TAG,"%s", query_mqtt_msg);
         } else {
-            ESP_LOGW(TAG,"Unknown sensor tag: %s\n", tag);
+            sprintf(query_mqtt_msg,"Unknown sensor tag: %s\n", tag);
+            ESP_LOGI(TAG,"%s", query_mqtt_msg);
         }
     }
     else {
-        ESP_LOGE(TAG,"Unknown group: %s\n", group);
+        sprintf(query_mqtt_msg, "Unknown group: %s\n", group);
+        ESP_LOGI(TAG,"%s", query_mqtt_msg);
     }
+
+    mqtt_app_send(query_mqtt_msg,strlen(query_mqtt_msg),"query");
 }
 
 void decoder_process_command(const char *cmd)
@@ -248,4 +271,18 @@ void command_task(void *pvParameters)
         }
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
+}
+
+void id_encoder_base64(const char *input, char *output, size_t output_size) 
+{
+    size_t olen;
+    mbedtls_base64_encode((unsigned char *)output, output_size, &olen, (const unsigned char *)input, strlen(input));
+    output[olen] = '\0';
+}
+
+void id_decoder_base64(const char *input, char *output, size_t output_size) 
+{
+    size_t olen;
+    mbedtls_base64_decode((unsigned char *)output, output_size, &olen, (const unsigned char *)input, strlen(input));
+    output[olen] = '\0';
 }

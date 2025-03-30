@@ -22,6 +22,7 @@
 #include "settings.h"
 #include "esp_log.h"
 #include "mqtt_client.h"
+#include "decoder.h"
 
 static const char *TAG = "MQTT";
 static bool mqtt_connected = false;
@@ -117,7 +118,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
             ESP_LOGD(TAG, "New MQTT data: topic: %.*s", event->topic_len, event->topic);
             event->data[event->data_len] = 0;
             ESP_LOGD(TAG, "New MQTT data: data: %.*s", event->data_len, event->data);
-            //trimitere catre decoder  
+            decoder_process_command(event->data);
             break;
         case MQTT_EVENT_ERROR:
             ESP_LOGI(TAG, "MQTT_EVENT_ERROR");

@@ -5,6 +5,7 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "settings.h"
+#include "decoder.h"
 
 static const char *TAG = "SETTINGS";
 app_settings_t s_settings;
@@ -31,7 +32,8 @@ static void load_defaults(void)
     strncpy(s_settings.mqtt_topic, MQTT_TOPIC_DEFAULT, sizeof(s_settings.mqtt_topic));
     strncpy(s_settings.mqtt_up, MQTT_UP_DEFAULT, sizeof(s_settings.mqtt_up));
     strncpy(s_settings.mqtt_down, MQTT_DOWN_DEFAULT, sizeof(s_settings.mqtt_down));
-    s_settings.sensor_id = SENSOR_ID_DEFAULT;
+    strncpy(s_settings.decoded_sensor_id, SENSOR_ID_DEFAULT, sizeof(s_settings.decoded_sensor_id));
+    id_encoder_base64(s_settings.decoded_sensor_id, s_settings.encoded_sensor_id, sizeof(s_settings.encoded_sensor_id));
     s_settings.status = SENSOR_STATUS_DEFAULT;
 }
 
@@ -46,7 +48,8 @@ void print_all_settings(void){
     ESP_LOGI(TAG, "MQTT Topic: %s", s_settings.mqtt_topic);
     ESP_LOGI(TAG, "MQTT Up: %s", s_settings.mqtt_up);
     ESP_LOGI(TAG, "MQTT Down: %s", s_settings.mqtt_down);
-    ESP_LOGI(TAG, "Sensor ID: %d", s_settings.sensor_id);
+    ESP_LOGI(TAG, "Decoded sensor ID: %s", s_settings.decoded_sensor_id);
+    ESP_LOGI(TAG, "Encoded sensor ID: %s", s_settings.encoded_sensor_id);
     const char *status_str = (s_settings.status == SENSOR_STATUS_UP) ? "UP" :
                               (s_settings.status == SENSOR_STATUS_DOWN) ? "DOWN" :
                               (s_settings.status == SENSOR_STATUS_MAINTENANCE) ? "MAINTENANCE" :
@@ -145,11 +148,21 @@ void settings_init(void)
         changes = true;
     }
 
-    err = nvs_get_u16(handle, KEY_SENSOR_ID, &s_settings.sensor_id);
+    required_size = sizeof(s_settings.decoded_sensor_id);
+    err = nvs_get_str(handle, KEY_SENSOR_ID, s_settings.decoded_sensor_id, &required_size);
     if (err != ESP_OK) 
     {
         ESP_LOGW(TAG, "Key %s not found; using default value", KEY_SENSOR_ID);
-        s_settings.sensor_id = SENSOR_ID_DEFAULT;
+        strncpy(s_settings.decoded_sensor_id, SENSOR_ID_DEFAULT, sizeof(s_settings.decoded_sensor_id));
+        changes = true;
+    }
+
+    required_size = sizeof(s_settings.encoded_sensor_id);
+    err = nvs_get_str(handle, KEY_SENSOR_ID_ENCODED, s_settings.encoded_sensor_id, &required_size);
+    if (err != ESP_OK) 
+    {
+        ESP_LOGW(TAG, "Key %s not found; using default value", KEY_SENSOR_ID_ENCODED);
+        strncpy(s_settings.encoded_sensor_id, SENSOR_ID_ENCODED_DEFAULT, sizeof(s_settings.encoded_sensor_id));
         changes = true;
     }
 
@@ -205,8 +218,11 @@ void settings_save(void)
     err = nvs_set_str(handle, COMM_MQTT_DOWN, s_settings.mqtt_down);
     if (err != ESP_OK) ESP_LOGE(TAG, "Error saving MQTT DOWN");
     
-    err = nvs_set_u16(handle, KEY_SENSOR_ID, s_settings.sensor_id);
+    err = nvs_set_str(handle, KEY_SENSOR_ID, s_settings.decoded_sensor_id);
     if (err != ESP_OK) ESP_LOGE(TAG, "Error saving SENSOR ID");
+
+    err = nvs_set_str(handle, KEY_SENSOR_ID_ENCODED, s_settings.encoded_sensor_id);
+    if (err != ESP_OK) ESP_LOGE(TAG, "Error saving ENCODED SENSOR ID");
     
     err = nvs_set_u16(handle, KEY_SENSOR_STATUS, s_settings.status);
     if (err != ESP_OK) ESP_LOGE(TAG, "Error saving sensor status");
@@ -291,9 +307,14 @@ esp_err_t settings_set(const char *key, void *value, size_t size, bool is_string
         strncpy(s_settings.mqtt_down, (char *)value, sizeof(s_settings.mqtt_down));
     } 
     else if (strcmp(key, KEY_SENSOR_ID) == 0) 
-    {
-        s_settings.sensor_id = *(uint16_t *)value;
-    }
+{
+    strncpy(s_settings.decoded_sensor_id, (char *)value, sizeof(s_settings.decoded_sensor_id) - 1);
+    s_settings.decoded_sensor_id[sizeof(s_settings.decoded_sensor_id) - 1] = '\0';
+    
+    id_encoder_base64(s_settings.decoded_sensor_id, s_settings.encoded_sensor_id, sizeof(s_settings.encoded_sensor_id));
+    s_settings.encoded_sensor_id[sizeof(s_settings.encoded_sensor_id) - 1] = '\0';
+}
+
     else if (strcmp(key, KEY_SENSOR_STATUS) == 0) 
     {
         if (is_string) 
