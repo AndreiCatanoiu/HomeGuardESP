@@ -10,7 +10,7 @@ typedef enum {
 #define WIFI_SSID_DEFAULT    "TotalRom_2.4GHz"
 #define WIFI_PASS_DEFAULT    "totalrom"
 
-#define MQTT_SERVER_DEFAULT  "catanoiulicenta.ddns.net"
+#define MQTT_SERVER_DEFAULT  "www.andericatanoiu.ro"
 #define MQTT_PORT_DEFAULT    1883
 #define MQTT_USER_DEFAULT    "admin"
 #define MQTT_PASS_DEFAULT    "admin"
@@ -18,7 +18,7 @@ typedef enum {
 #define MQTT_UP_DEFAULT      "up"
 #define MQTT_DOWN_DEFAULT    "down"
 
-#define SENSOR_ID_DEFAULT    1
+#define SENSOR_ID_DEFAULT    "SenzorGaz-1"
 #define SENSOR_STATUS_DEFAULT  SENSOR_STATUS_UP
 
 #define NVS_NAMESPACE "app_settings"
@@ -47,7 +47,8 @@ typedef struct {
     char mqtt_topic[150];
     char mqtt_up[32];
     char mqtt_down[32];
-    uint16_t sensor_id;
+    char encoded_sensor_id[100];
+    char decoded_sensor_id[100];
     sensor_status_t status;
 } app_settings_t;
 

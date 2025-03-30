@@ -24,7 +24,7 @@ void app_main()
 {
     system_init();
     xTaskCreate(&wifi_task, "wifi_task", 4096, NULL, 5, NULL);
-    xTaskCreate(&sensor_selector_task, "sensor_selector_task", 4096, &(s_settings.sensor_id), 5, NULL);
+    xTaskCreate(&sensor_selector_task, "sensor_selector_task", 4096, &(s_settings.decoded_sensor_id), 5, NULL);
     xTaskCreate(&is_device_available, "is_device_available", 4096, NULL, 5, NULL);
     xTaskCreate(&command_task, "command_task", 4096, NULL, 5, NULL);
 }

@@ -8,6 +8,7 @@
 #include "freertos/task.h"
 #include "mqtt_comm.h"
 #include "settings.h"
+#include "mbedtls/base64.h"
 
 static const char *TAG = "DECODER";
 
@@ -66,9 +67,8 @@ void decode_settings(char *args)
     }
     else if (strcmp(group, "sensor") == 0) {
         if (strcmp(tag, "id") == 0) {
-            uint16_t id = (uint16_t)atoi(value);
-            settings_set(KEY_SENSOR_ID, &id, sizeof(id), false);
-            ESP_LOGI(TAG,"Sensor ID set to: %d\n", s_settings.sensor_id);
+            settings_set(KEY_SENSOR_ID, value, strlen(value), true);
+            ESP_LOGI(TAG,"Decoded sensor ID set to: %s\n", s_settings.decoded_sensor_id);
         } else if (strcmp(tag, "status") == 0) {
             if (isdigit((unsigned char)value[0])) {
                 uint16_t status_val = (uint16_t)atoi(value);
@@ -141,10 +141,14 @@ void query_settings(char *args)
         }
     }
     else if (strcmp(group, "sensor") == 0) {
-        if (strcmp(tag, "id") == 0) {
-            sprintf(query_mqtt_msg, "Sensor ID: %d\n", s_settings.sensor_id);
+        if (strcmp(tag, "id_encoded") == 0) {
+            sprintf(query_mqtt_msg, "Encoded sensor ID: %s\n", s_settings.encoded_sensor_id);
             ESP_LOGI(TAG,"%s", query_mqtt_msg);
-        } else if (strcmp(tag, "status") == 0) {
+        }else if (strcmp(tag, "id_decoded") == 0) {
+            sprintf(query_mqtt_msg, "Decoded sensor ID: %s\n", s_settings.decoded_sensor_id);
+            ESP_LOGI(TAG,"%s", query_mqtt_msg);
+        } 
+        else if (strcmp(tag, "status") == 0) {
             const char *status_str = (s_settings.status == SENSOR_STATUS_UP) ? "UP" :
                                       (s_settings.status == SENSOR_STATUS_DOWN) ? "DOWN" :
                                       (s_settings.status == SENSOR_STATUS_MAINTENANCE) ? "MAINTENANCE" : "UNKNOWN";
@@ -267,4 +271,18 @@ void command_task(void *pvParameters)
         }
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
+}
+
+void id_encoder_base64(const char *input, char *output, size_t output_size) 
+{
+    size_t olen;
+    mbedtls_base64_encode((unsigned char *)output, output_size, &olen, (const unsigned char *)input, strlen(input));
+    output[olen] = '\0';
+}
+
+void id_decoder_base64(const char *input, char *output, size_t output_size) 
+{
+    size_t olen;
+    mbedtls_base64_decode((unsigned char *)output, output_size, &olen, (const unsigned char *)input, strlen(input));
+    output[olen] = '\0';
 }
