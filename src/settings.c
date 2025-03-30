@@ -332,3 +332,34 @@ esp_err_t settings_set(const char *key, void *value, size_t size, bool is_string
 
     return ESP_OK;
 }
+
+void settings_reset(void)
+{
+    ESP_LOGI(TAG, "Resetarea NVS la setările default...");
+
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Eroare la deschiderea NVS (%s)", esp_err_to_name(err));
+        return;
+    }
+
+    err = nvs_erase_all(handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Eroare la ștergerea NVS (%s)", esp_err_to_name(err));
+        nvs_close(handle);
+        return;
+    }
+
+    err = nvs_commit(handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Eroare la commit-ul NVS (%s)", esp_err_to_name(err));
+        nvs_close(handle);
+        return;
+    }
+    nvs_close(handle);
+
+    ESP_LOGI(TAG, "NVS a fost ștearsă cu succes. Reîncărc setările default...");
+    load_defaults();
+    settings_save();
+}

@@ -83,6 +83,14 @@ void decode_settings(char *args)
         } else {
             ESP_LOGE(TAG,"Unknown sensor tag: %s\n", tag);
         }
+    } else if (strcmp(group, "reset") == 0) {
+        if (strcmp(tag, "all") == 0) {
+            ESP_LOGI(TAG,"WiFi SSID set to: %s\n", s_settings.wifi_ssid);
+            settings_reset();
+        } 
+        else {
+            ESP_LOGE(TAG,"Unknown reset tag: %s\n", tag);
+        }
     }
     else {
         ESP_LOGE(TAG,"Unknown group: %s\n", group);
