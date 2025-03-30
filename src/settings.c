@@ -148,12 +148,21 @@ void settings_init(void)
         changes = true;
     }
 
-    err = nvs_get_u16(handle, KEY_SENSOR_ID, &s_settings.decoded_sensor_id);
+    required_size = sizeof(s_settings.decoded_sensor_id);
+    err = nvs_get_str(handle, KEY_SENSOR_ID, s_settings.decoded_sensor_id, &required_size);
     if (err != ESP_OK) 
     {
         ESP_LOGW(TAG, "Key %s not found; using default value", KEY_SENSOR_ID);
         strncpy(s_settings.decoded_sensor_id, SENSOR_ID_DEFAULT, sizeof(s_settings.decoded_sensor_id));
-        id_encoder_base64(s_settings.decoded_sensor_id, s_settings.encoded_sensor_id, sizeof(s_settings.encoded_sensor_id));
+        changes = true;
+    }
+
+    required_size = sizeof(s_settings.encoded_sensor_id);
+    err = nvs_get_str(handle, KEY_SENSOR_ID_ENCODED, s_settings.encoded_sensor_id, &required_size);
+    if (err != ESP_OK) 
+    {
+        ESP_LOGW(TAG, "Key %s not found; using default value", KEY_SENSOR_ID_ENCODED);
+        strncpy(s_settings.encoded_sensor_id, SENSOR_ID_ENCODED_DEFAULT, sizeof(s_settings.encoded_sensor_id));
         changes = true;
     }
 
@@ -209,8 +218,11 @@ void settings_save(void)
     err = nvs_set_str(handle, COMM_MQTT_DOWN, s_settings.mqtt_down);
     if (err != ESP_OK) ESP_LOGE(TAG, "Error saving MQTT DOWN");
     
-    err = nvs_set_u16(handle, KEY_SENSOR_ID, s_settings.decoded_sensor_id);
+    err = nvs_set_str(handle, KEY_SENSOR_ID, s_settings.decoded_sensor_id);
     if (err != ESP_OK) ESP_LOGE(TAG, "Error saving SENSOR ID");
+
+    err = nvs_set_str(handle, KEY_SENSOR_ID_ENCODED, s_settings.encoded_sensor_id);
+    if (err != ESP_OK) ESP_LOGE(TAG, "Error saving ENCODED SENSOR ID");
     
     err = nvs_set_u16(handle, KEY_SENSOR_STATUS, s_settings.status);
     if (err != ESP_OK) ESP_LOGE(TAG, "Error saving sensor status");
@@ -295,10 +307,14 @@ esp_err_t settings_set(const char *key, void *value, size_t size, bool is_string
         strncpy(s_settings.mqtt_down, (char *)value, sizeof(s_settings.mqtt_down));
     } 
     else if (strcmp(key, KEY_SENSOR_ID) == 0) 
-    {
-        strncpy(s_settings.decoded_sensor_id, (char *)value, sizeof(s_settings.decoded_sensor_id));
-        id_encoder_base64(s_settings.decoded_sensor_id, s_settings.encoded_sensor_id, sizeof(s_settings.encoded_sensor_id));
-    }
+{
+    strncpy(s_settings.decoded_sensor_id, (char *)value, sizeof(s_settings.decoded_sensor_id) - 1);
+    s_settings.decoded_sensor_id[sizeof(s_settings.decoded_sensor_id) - 1] = '\0';
+    
+    id_encoder_base64(s_settings.decoded_sensor_id, s_settings.encoded_sensor_id, sizeof(s_settings.encoded_sensor_id));
+    s_settings.encoded_sensor_id[sizeof(s_settings.encoded_sensor_id) - 1] = '\0';
+}
+
     else if (strcmp(key, KEY_SENSOR_STATUS) == 0) 
     {
         if (is_string) 

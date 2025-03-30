@@ -19,6 +19,7 @@ typedef enum {
 #define MQTT_DOWN_DEFAULT    "down"
 
 #define SENSOR_ID_DEFAULT    "SenzorGaz-1"
+#define SENSOR_ID_ENCODED_DEFAULT    ""
 #define SENSOR_STATUS_DEFAULT  SENSOR_STATUS_UP
 
 #define NVS_NAMESPACE "app_settings"
@@ -35,6 +36,7 @@ typedef enum {
 #define COMM_MQTT_DOWN    "mqtt_down"
 
 #define KEY_SENSOR_ID    "sensor_id"
+#define KEY_SENSOR_ID_ENCODED "encoded_id"
 #define KEY_SENSOR_STATUS "sensor_status"
 
 typedef struct {
