@@ -47,6 +47,11 @@ typedef struct
 	uint8_t conn_err;
 } WifiDetails_t;
 
+static void start_webserver();
+static void configure_button();
+static bool check_for_ap_press();
+static httpd_handle_t server = NULL;
+static bool ap_mode_active = false;
 static EventGroupHandle_t wifi_event_group;
 static WifiDetails_t wifi_details;
 static WifiAp_t APs[] = 
@@ -58,6 +63,231 @@ static uint8_t APs_count;
 const static char* TAG = "WIFI";
 const static int CONNECTED_BIT = BIT0;
 const static int DISCONNECTED_BIT = BIT1;
+
+
+void configure_button(void) {
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << AP_BUTTON),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE
+    };
+    gpio_config(&io_conf);
+}
+
+bool check_for_ap_press(void) {
+    if (gpio_get_level(AP_BUTTON) == 0) {
+        vTaskDelay(50 / portTICK_PERIOD_MS);
+        if (gpio_get_level(AP_BUTTON) == 0) {
+            ESP_LOGI(TAG, "Configuration button pressed → AP mode");
+            return true;
+        }
+    }
+    return false;
+}
+
+void start_wifi_ap(void) {
+    char ssid[150];
+    snprintf(ssid, sizeof(ssid), "Device id: %s", s_settings.encoded_sensor_id);
+    ssid[32] = '\0'; 
+
+    wifi_config_t wifi_config = {
+        .ap = {
+            .ssid_len      = 0,                 
+            .channel       = 1,
+            .authmode      = WIFI_AUTH_WPA2_PSK,
+            .max_connection= 4
+        }
+    };
+    strlcpy((char*)wifi_config.ap.ssid, ssid, sizeof(wifi_config.ap.ssid));
+    strlcpy((char*)wifi_config.ap.password, "HomeGuard", sizeof(wifi_config.ap.password));
+    
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    ESP_LOGI(TAG, "AP mode on: SSID=%s PASS=%s", wifi_config.ap.ssid, wifi_config.ap.password);
+    ap_mode_active = true;
+    start_webserver();
+}
+
+static esp_err_t root_handler(httpd_req_t *req) 
+{
+    const char* html = "<!DOCTYPE html><html><head>"
+        "<title>ESP32 WiFi Setup</title>"
+        "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+        "<style>body{font-family:Arial;margin:0;padding:20px;} "
+        "form{max-width:400px;margin:0 auto;} "
+        "input[type=text],input[type=password]{width:100%;padding:12px 20px;margin:8px 0;display:inline-block;border:1px solid #ccc;box-sizing:border-box;} "
+        "button{background-color:#4CAF50;color:white;padding:14px 20px;margin:8px 0;border:none;cursor:pointer;width:100%;} "
+        "button:hover{opacity:0.8;}</style>"
+        "</head><body>"
+        "<form action='/save-config' method='post'>"
+        "<h2>WiFi Configuration</h2>"
+        "<label for='ssid'><b>WiFi name (SSID)</b></label>"
+        "<input type='text' placeholder='Enter SSID' name='ssid' required>"
+        "<label for='pass'><b>Password</b></label>"
+        "<input type='password' placeholder='Enter password' name='pass' required>"
+        "<button type='submit'>Save and connect</button>"
+        "</form>"
+        "</body></html>";
+        
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, html, strlen(html));
+    return ESP_OK;
+}
+
+static void url_decode(char* dst, const char* src) {
+    char a, b;
+    while (*src) {
+        if ((*src == '%') && ((a = src[1]) && (b = src[2])) && 
+            (isxdigit(a) && isxdigit(b))) {
+            if (a >= 'a') a -= 'a'-'A';
+            if (a >= 'A') a -= ('A' - 10);
+            else a -= '0';
+            
+            if (b >= 'a') b -= 'a'-'A';
+            if (b >= 'A') b -= ('A' - 10);
+            else b -= '0';
+            
+            *dst++ = 16 * a + b;
+            src += 3;
+        } else if (*src == '+') {
+            *dst++ = ' ';
+            src++;
+        } else {
+            *dst++ = *src++;
+        }
+    }
+    *dst++ = '\0';
+}
+
+static void parse_form_data(char* buf, char* field_name, char* output, size_t output_size) {
+    char param_name[64];
+    snprintf(param_name, sizeof(param_name), "%s=", field_name);
+    
+    char* start = strstr(buf, param_name);
+    if (!start) {
+        output[0] = '\0';
+        return;
+    }
+    
+    start += strlen(param_name);
+    char* end = strchr(start, '&');
+    if (!end) {
+        end = start + strlen(start);
+    }
+    
+    size_t param_len = end - start;
+    if (param_len >= output_size) {
+        param_len = output_size - 1;
+    }
+    
+    memcpy(output, start, param_len);
+    output[param_len] = '\0';
+    url_decode(output, output);
+}
+
+static esp_err_t save_wifi_config_handler(httpd_req_t *req) {
+    char buf[200];
+    int ret, remaining = req->content_len;
+    
+    if (remaining > sizeof(buf)) {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Content too long");
+        return ESP_FAIL;
+    }
+    
+    while (remaining > 0) {
+        size_t chunk = (remaining < sizeof(buf)) ? remaining : sizeof(buf);
+        ret = httpd_req_recv(req, buf, chunk);
+        if (ret <= 0) {
+            return ESP_FAIL;
+        }
+        remaining -= ret;
+    }
+    buf[req->content_len] = '\0';
+    
+    char ssid[33] = {0};
+    char pass[65] = {0};
+    
+    parse_form_data(buf, "ssid", ssid, sizeof(ssid));
+    parse_form_data(buf, "pass", pass, sizeof(pass));
+    
+    if (strlen(ssid) > 0) {
+        settings_set(WIFI_SSID, ssid, strlen(ssid) + 1, true);
+        settings_set(WIFI_PASS, pass, strlen(pass) + 1, true);
+        
+        const char* html = "<!DOCTYPE html><html><head>"
+            "<title>Succes</title><meta http-equiv='refresh' content='5;url=/'>"
+            "<style>body{font-family:Arial;text-align:center;padding-top:50px;}</style>"
+            "</head><body>"
+            "<h1>Configuration saved!</h1>"
+            "<p>The device will restart and connect to the WiFi network.</p>"
+            "</body></html>";
+        
+        httpd_resp_set_type(req, "text/html");
+        httpd_resp_send(req, html, strlen(html));
+        
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        esp_restart();
+        return ESP_OK;
+    }
+    
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid parameters");
+    return ESP_FAIL;
+}
+
+void start_webserver(void) {
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.stack_size = 8192;
+    
+    httpd_uri_t root = {
+        .uri       = "/",
+        .method    = HTTP_GET,
+        .handler   = root_handler,
+        .user_ctx  = NULL
+    };
+    
+    httpd_uri_t save_wifi = {
+        .uri       = "/save-config",
+        .method    = HTTP_POST,
+        .handler   = save_wifi_config_handler,
+        .user_ctx  = NULL
+    };
+    
+    if (httpd_start(&server, &config) == ESP_OK) {
+        httpd_register_uri_handler(server, &root);
+        httpd_register_uri_handler(server, &save_wifi);
+        ESP_LOGI(TAG, "Web server started");
+    } else {
+        ESP_LOGE(TAG, "Error starting web server");
+    }
+}
+
+void check_for_ap_mode_request(void) 
+{
+    const gpio_num_t CONFIG_BUTTON_PIN = AP_BUTTON;  
+    
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << CONFIG_BUTTON_PIN),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE
+    };
+    gpio_config(&io_conf);
+    
+    if (gpio_get_level(CONFIG_BUTTON_PIN) == 0) {
+        vTaskDelay(50 / portTICK_PERIOD_MS);
+        
+        if (gpio_get_level(CONFIG_BUTTON_PIN) == 0) {
+            ESP_LOGI(TAG, "Configuration button pressed, switches to AP mode");
+            start_wifi_ap();
+        }
+    }
+}
 
 static void wifi_event_handler(int32_t event_id)
 {
@@ -120,14 +350,19 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
 
 void wifi_init_sta(void)
 {
+    check_for_ap_mode_request();
     APs_count = sizeof(APs) / sizeof(APs[0]);
 
     ESP_LOGI(TAG, "Init %d access points finished.", APs_count);
+
+    APs[0].ssid = s_settings.wifi_ssid;
+    APs[0].pass = s_settings.wifi_pass;
 
     wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_create_default_wifi_sta();
+    esp_netif_create_default_wifi_ap();
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     esp_event_handler_instance_t instance_any_id;
@@ -200,77 +435,77 @@ void wifi_task_events(WIFI_STATES new_state)
 	}
 }
 
-void wifi_task(void *pvParameters)
-{
-    ESP_LOGI(TAG, "Task started!");
+
+void wifi_task(void *pvParameters) {
+    ESP_LOGI(TAG, "WiFi task pornit");
     esp_efuse_mac_get_default(wifi_details.mac);
+
+    // configurează butonul o singură dată
+    configure_button();
+
+    bool has_credentials = (strlen(s_settings.wifi_ssid) > 0);
+    if (!has_credentials) {
+        start_wifi_ap();
+        while(ap_mode_active) vTaskDelay(500 / portTICK_PERIOD_MS);
+        return;
+    }
+    // init STA
     wifi_init_sta();
-    
     wifi_task_events(CONNECTING);
-    EventBits_t bits = 0;
+
+    EventBits_t bits;
     uint8_t selected_ap = 0;
 
-    while (1)
-    {
-        switch (wifi_details.state)
-        {
+    while (1) {
+        if (check_for_ap_press()) {
+            esp_wifi_stop();
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+            start_wifi_ap();
+            vTaskDelete(NULL);
+        }
+
+        switch (wifi_details.state) {
             case CONNECTING:
                 xEventGroupClearBits(wifi_event_group, CONNECTED_BIT | DISCONNECTED_BIT);
                 wifi_connect(APs[selected_ap].ssid, APs[selected_ap].pass);
                 wifi_details.ap = &APs[selected_ap];
-                
-                bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT | DISCONNECTED_BIT, pdFALSE, pdFALSE, 10 * 1000 / portTICK_PERIOD_MS);
-
-                if (bits & CONNECTED_BIT)
-                {
-                    wifi_task_events(CONNECTED); 
-                }
-                else if (bits & DISCONNECTED_BIT)
-                {
-                    selected_ap++;
-                    selected_ap %= APs_count;
+                bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT | DISCONNECTED_BIT,
+                                           pdFALSE, pdFALSE, 10000 / portTICK_PERIOD_MS);
+                if (bits & CONNECTED_BIT) wifi_task_events(CONNECTED);
+                else if (bits & DISCONNECTED_BIT) {
+                    wifi_details.conn_err++;
+                    if (wifi_details.conn_err >= 3) {
+                        start_wifi_ap(); 
+                        vTaskDelete(NULL);
+                    }
+                    selected_ap = (selected_ap + 1) % APs_count;
                 }
                 break;
-
             case CONNECTED:
                 bits = xEventGroupGetBits(wifi_event_group);
-                if (bits & DISCONNECTED_BIT)
-                {
-                    wifi_task_events(DISCONNECTING); 
-                }
+                if (bits & DISCONNECTED_BIT) wifi_task_events(DISCONNECTING);
                 break;
-
             case DISCONNECTING:
-                if (esp_log_timestamp() - wifi_details.down_timestamp <= 60 * 1000)
-                {
-				    mqtt_app_stop();
-                    ESP_LOGI(TAG, "Wifi disconnected, reconnecting ...");
-                    xEventGroupClearBits(wifi_event_group, CONNECTED_BIT | DISCONNECTED_BIT);
+                if (esp_log_timestamp() - wifi_details.down_timestamp <= 60000) {
+                    mqtt_app_stop();
                     esp_wifi_connect();
-                    bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT | DISCONNECTED_BIT, pdFALSE, pdFALSE, 10 * 1000 / portTICK_PERIOD_MS);
-                    if (bits & CONNECTED_BIT)
-                    {
-                        wifi_task_events(CONNECTED);
-                    }
-                }
-                else
-                {
+                    bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT | DISCONNECTED_BIT,
+                                               pdFALSE, pdFALSE, 10000 / portTICK_PERIOD_MS);
+                    if (bits & CONNECTED_BIT) wifi_task_events(CONNECTED);
+                } else {
                     wifi_task_events(DISCONNECTED);
                 }
                 break;
-
             case DISCONNECTED:
                 wifi_task_events(CONNECTING);
                 break;
-
             default:
-                ESP_LOGE(TAG, "Task went wrong!");
-                break;
+                ESP_LOGE(TAG, "Unknown state %d", wifi_details.state);
         }
-
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
+
 
 bool is_wifi_connected()
 {

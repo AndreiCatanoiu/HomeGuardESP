@@ -65,6 +65,7 @@ void decode_settings(char *args)
             ESP_LOGE(TAG,"Unknown MQTT tag: %s\n", tag);
         }
     }
+    
     else if (strcmp(group, "sensor") == 0) {
         if (strcmp(tag, "id") == 0) {
             settings_set(KEY_SENSOR_ID, value, strlen(value), true);
