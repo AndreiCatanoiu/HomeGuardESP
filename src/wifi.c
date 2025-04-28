@@ -121,8 +121,6 @@ static esp_err_t save_wifi_config_handler(httpd_req_t *req) {
     parse_form_data(buf, "pass", pass, sizeof(pass));
     
     if (strlen(ssid) > 0) {
-        settings_set(WIFI_SSID, ssid, strlen(ssid) + 1, true);
-        settings_set(WIFI_PASS, pass, strlen(pass) + 1, true);
         
         const char* html = "<!DOCTYPE html><html><head>"
             "<title>Succes</title><meta http-equiv='refresh' content='5;url=/'>"
@@ -136,7 +134,7 @@ static esp_err_t save_wifi_config_handler(httpd_req_t *req) {
         httpd_resp_send(req, html, strlen(html));
         
         vTaskDelay(2000 / portTICK_PERIOD_MS);
-        esp_restart();
+        wifi_ap_set(ssid, pass);
         return ESP_OK;
     }
     

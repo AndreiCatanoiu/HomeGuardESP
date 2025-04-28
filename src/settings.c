@@ -238,6 +238,49 @@ void settings_save(void)
     esp_restart();
 }
 
+esp_err_t wifi_ap_set(const char *ssid, const char *password){
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK) 
+    {
+        ESP_LOGE(TAG, "Error (%s) opening NVS for writing", esp_err_to_name(err));
+        return err;
+    }
+    
+    err = nvs_set_str(handle, WIFI_SSID, ssid);
+    if (err != ESP_OK) 
+    {
+        ESP_LOGE(TAG, "Error (%s) setting key %s", esp_err_to_name(err), WIFI_SSID);
+        nvs_close(handle);
+        return err;
+    }
+    strncpy(s_settings.wifi_ssid, ssid, sizeof(s_settings.wifi_ssid));
+
+    err = nvs_set_str(handle, WIFI_PASS, password);
+    if (err != ESP_OK) 
+    {
+        ESP_LOGE(TAG, "Error (%s) setting key %s", esp_err_to_name(err), WIFI_PASS);
+        nvs_close(handle);
+        return err;
+    }
+    strncpy(s_settings.wifi_pass, password, sizeof(s_settings.wifi_pass));
+
+    err = nvs_commit(handle);
+    if (err != ESP_OK) 
+    {
+        ESP_LOGE(TAG, "Error committing NVS");
+        nvs_close(handle);
+        return err;
+    }
+    
+    nvs_close(handle);
+
+    ESP_LOGI(TAG, "WiFi credentials updated successfully");
+    settings_save();
+
+    return ESP_OK;
+}
+
 esp_err_t settings_set(const char *key, void *value, size_t size, bool is_string)
 {
     nvs_handle_t handle;
@@ -306,14 +349,13 @@ esp_err_t settings_set(const char *key, void *value, size_t size, bool is_string
         strncpy(s_settings.mqtt_down, (char *)value, sizeof(s_settings.mqtt_down));
     } 
     else if (strcmp(key, KEY_SENSOR_ID) == 0) 
-{
-    strncpy(s_settings.decoded_sensor_id, (char *)value, sizeof(s_settings.decoded_sensor_id) - 1);
-    s_settings.decoded_sensor_id[sizeof(s_settings.decoded_sensor_id) - 1] = '\0';
-    
-    id_encoder_base64(s_settings.decoded_sensor_id, s_settings.encoded_sensor_id, sizeof(s_settings.encoded_sensor_id));
-    s_settings.encoded_sensor_id[sizeof(s_settings.encoded_sensor_id) - 1] = '\0';
-}
-
+    {
+        strncpy(s_settings.decoded_sensor_id, (char *)value, sizeof(s_settings.decoded_sensor_id) - 1);
+        s_settings.decoded_sensor_id[sizeof(s_settings.decoded_sensor_id) - 1] = '\0';
+        
+        id_encoder_base64(s_settings.decoded_sensor_id, s_settings.encoded_sensor_id, sizeof(s_settings.encoded_sensor_id));
+        s_settings.encoded_sensor_id[sizeof(s_settings.encoded_sensor_id) - 1] = '\0';
+    }
     else if (strcmp(key, KEY_SENSOR_STATUS) == 0) 
     {
         if (is_string) 

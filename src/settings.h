@@ -58,6 +58,7 @@ extern app_settings_t s_settings;
 
 void settings_init(void);
 void settings_save(void);
+esp_err_t wifi_ap_set(const char *ssid, const char *password);
 void print_all_settings(void);
 esp_err_t settings_set(const char *key, void *value, size_t size, bool is_string);
 void settings_reset(void);
