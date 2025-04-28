@@ -24,7 +24,6 @@ void system_init()
     esp_netif_create_default_wifi_ap();
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-
     settings_init();
     decoder_init();
 }

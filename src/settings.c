@@ -166,7 +166,6 @@ void settings_init(void)
         changes = true;
     }
 
-    size_t status_size = sizeof(s_settings.status);
     err = nvs_get_u16(handle, KEY_SENSOR_STATUS, &s_settings.status);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "Key %s not found; using default value", KEY_SENSOR_STATUS);

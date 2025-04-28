@@ -64,7 +64,6 @@ const static char* TAG = "WIFI";
 const static int CONNECTED_BIT = BIT0;
 const static int DISCONNECTED_BIT = BIT1;
 
-
 void configure_button(void) {
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << AP_BUTTON),
@@ -95,7 +94,6 @@ static void start_captive_dns(void) {
     start_dns_server(&cfg);
     ESP_LOGI(TAG, "Captive DNS started");
 }
-
 
 static esp_err_t save_wifi_config_handler(httpd_req_t *req) {
     char buf[200];
@@ -147,36 +145,17 @@ static esp_err_t save_wifi_config_handler(httpd_req_t *req) {
 }
 
 static esp_err_t cp_redirect_handler(httpd_req_t *req) {
-    if (strstr(req->uri, "hotspot-detect.html") ||
-        strstr(req->uri, "success.html") ||
-        strstr(req->uri, "generate_204") ||
-        strstr(req->uri, "connecttest.txt") ||
-        strstr(req->uri, "redirect") ||
-        strstr(req->uri, "ncsi.txt")) {
-        
-        if (strstr(req->uri, ".html")) {
-            httpd_resp_set_type(req, "text/html");
-            httpd_resp_send(req, "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>", -1);
-            return ESP_OK;
-        }
-        else if (strstr(req->uri, "generate_204")) {
-            httpd_resp_set_status(req, "204 No Content");
-            httpd_resp_send(req, NULL, 0);
-            return ESP_OK;
-        }
-        else if (strstr(req->uri, "connecttest.txt") || strstr(req->uri, "ncsi.txt")) {
-            httpd_resp_set_type(req, "text/plain");
-            httpd_resp_send(req, "Microsoft NCSI", -1);
-            return ESP_OK;
-        }
-    }
-    
-    if (strcmp(req->uri, "/") != 0) {
-        httpd_resp_set_status(req, "302 Found");
-        httpd_resp_set_hdr(req, "Location", "/");
-        httpd_resp_send(req, NULL, 0);
-    }
-    
+    httpd_resp_set_status(req, "302 Found");
+    httpd_resp_set_hdr(req, "Location", "/");
+    httpd_resp_send(req, NULL, 0);
+    return ESP_OK;
+}
+
+esp_err_t handle_default(httpd_req_t *req) {
+    ESP_LOGI(TAG, "Handling default URI");
+    const char* html = "<html><body><h1>Captive Portal</h1></body></html>";
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, html, strlen(html));
     return ESP_OK;
 }
 
@@ -208,45 +187,83 @@ static esp_err_t root_handler(httpd_req_t *req)
 
 static void start_captive_httpd(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.server_port = 80;
     config.stack_size = 8192;
-    config.lru_purge_enable = true;
     
+    config.max_open_sockets = 7;
+    config.server_port = 80;
+    config.lru_purge_enable = true;
+    config.max_uri_handlers = 20;
+    config.max_resp_headers = 16;
+    config.recv_wait_timeout = 15;
+    config.uri_match_fn = httpd_uri_match_wildcard;
+
     if (httpd_start(&server, &config) == ESP_OK) {
         httpd_uri_t root = {
-            .uri = "/",
-            .method = HTTP_GET,
-            .handler = root_handler,
+            .uri      = "/",
+            .method   = HTTP_GET,
+            .handler  = root_handler,
             .user_ctx = NULL
         };
         httpd_register_uri_handler(server, &root);
-        
-        httpd_uri_t save_wifi = {
-            .uri = "/save-config",
-            .method = HTTP_POST,
-            .handler = save_wifi_config_handler,
+
+        httpd_uri_t save = {
+            .uri      = "/save-config",
+            .method   = HTTP_POST,
+            .handler  = save_wifi_config_handler,
             .user_ctx = NULL
         };
-        httpd_register_uri_handler(server, &save_wifi);
-        
-        httpd_uri_t captive_detection = {
-            .uri = "/*",
-            .method = HTTP_GET,
-            .handler = cp_redirect_handler,
+        httpd_register_uri_handler(server, &save);
+
+        httpd_uri_t favicon = {
+            .uri      = "/favicon.ico",
+            .method   = HTTP_GET,
+            .handler  = cp_redirect_handler,
             .user_ctx = NULL
         };
-        httpd_register_uri_handler(server, &captive_detection);
-        
+        httpd_register_uri_handler(server, &favicon);
+
+        const char* paths[] = {
+            "/hotspot-detect.html",
+            "/success.html",
+            "/generate_204",
+            "/generate204",
+            "/connecttest.txt",
+            "/ncsi.txt",
+            "/redirect",
+            "/library/test/success.html",
+            "/hotspot.html",
+            "/canonical.html",
+            "/mobile/status.php",
+        };
+
+        for (size_t i = 0; i < sizeof(paths)/sizeof(paths[0]); ++i) {
+            httpd_uri_t cap = {
+                .uri      = paths[i],
+                .method   = HTTP_GET,
+                .handler  = cp_redirect_handler,
+                .user_ctx = NULL
+            };
+            httpd_register_uri_handler(server, &cap);
+        }
+
+        httpd_uri_t catchall = {
+            .uri      = "/*",
+            .method   = HTTP_GET,
+            .handler  = handle_default,
+            .user_ctx = NULL
+        };
+        httpd_register_uri_handler(server, &catchall);
+
         ESP_LOGI(TAG, "Captive portal HTTP server started");
     } else {
-        ESP_LOGE(TAG, "Error starting captive portal HTTP server");
+        ESP_LOGE(TAG, "Error starting HTTP server");
     }
 }
 
 void start_wifi_ap(void) {
     char ssid[150]; 
     snprintf(ssid, sizeof(ssid), "Device id: %s", s_settings.encoded_sensor_id);
-    ssid[33] = '/0';
+    ssid[33] = '\0';
     
     wifi_config_t wifi_config = { 0 };
     strlcpy((char*)wifi_config.ap.ssid, ssid, sizeof(wifi_config.ap.ssid));
@@ -264,7 +281,6 @@ void start_wifi_ap(void) {
     start_captive_dns();
     start_captive_httpd();
 }
-
 
 static void url_decode(char* dst, const char* src) {
     char a, b;

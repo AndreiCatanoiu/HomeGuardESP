@@ -13,7 +13,6 @@ const char *TAG = "SENSOR_SELECTOR";
 void sensor_selector_task(void *pvParameter)
 {
     const char *sensor_id = (const char *)pvParameter;
-    char decoded_sensor_id[100];
     if (strstr(sensor_id, "PIR") != NULL)
     {
         pir_config();
