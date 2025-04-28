@@ -187,14 +187,14 @@ static esp_err_t root_handler(httpd_req_t *req)
 
 static void start_captive_httpd(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.stack_size = 8192;
+    config.stack_size = 4096;
     
-    config.max_open_sockets = 7;
+    config.max_open_sockets = 4;
     config.server_port = 80;
     config.lru_purge_enable = true;
-    config.max_uri_handlers = 20;
+    config.max_uri_handlers = 10;
     config.max_resp_headers = 16;
-    config.recv_wait_timeout = 15;
+    config.recv_wait_timeout = 5;
     config.uri_match_fn = httpd_uri_match_wildcard;
 
     if (httpd_start(&server, &config) == ESP_OK) {
