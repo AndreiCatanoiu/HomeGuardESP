@@ -58,13 +58,13 @@ static WifiAp_t APs[] =
 {
     (WifiAp_t){.ssid = s_settings.wifi_ssid , .pass = s_settings.wifi_pass },
 };
-static uint8_t APs_count;
+static uint8_t APs_count = sizeof(APs) / sizeof(APs[0]);
 
 const static char* TAG = "WIFI";
 const static int CONNECTED_BIT = BIT0;
 const static int DISCONNECTED_BIT = BIT1;
 
-void configure_button(void) {
+static void configure_button(void) {
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << AP_BUTTON),
         .mode = GPIO_MODE_INPUT,
@@ -75,7 +75,7 @@ void configure_button(void) {
     gpio_config(&io_conf);
 }
 
-bool check_for_ap_press(void) {
+static bool check_for_ap_press(void) {
     if (gpio_get_level(AP_BUTTON) == 0) {
         vTaskDelay(50 / portTICK_PERIOD_MS);
         if (gpio_get_level(AP_BUTTON) == 0) {
@@ -555,7 +555,7 @@ void wifi_task(void *pvParameters) {
                     mqtt_app_stop();
                     esp_wifi_connect();
                     bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT | DISCONNECTED_BIT,
-                                               pdFALSE, pdFALSE, 10000 / portTICK_PERIOD_MS);
+                                                pdFALSE, pdFALSE, 10000 / portTICK_PERIOD_MS);
                     if (bits & CONNECTED_BIT) wifi_task_events(CONNECTED);
                 } else {
                     wifi_task_events(DISCONNECTED);
