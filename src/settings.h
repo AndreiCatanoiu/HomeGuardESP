@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "esp_err.h"
 
 typedef enum {
     SENSOR_STATUS_DOWN=0,
@@ -21,6 +22,7 @@ typedef enum {
 #define SENSOR_ID_DEFAULT    "SenzorGaz-1"
 #define SENSOR_ID_ENCODED_DEFAULT    ""
 #define SENSOR_STATUS_DEFAULT  SENSOR_STATUS_UP
+#define SENSOR_FIRMWARE_VERSION  "1.0.0"
 
 #define NVS_NAMESPACE "app_settings"
 
@@ -38,6 +40,7 @@ typedef enum {
 #define KEY_SENSOR_ID    "sensor_id"
 #define KEY_SENSOR_ID_ENCODED "encoded_id"
 #define KEY_SENSOR_STATUS "sensor_status"
+#define KEY_SENSOR_FIRMWARE_VERSION "firmware_version"
 
 typedef struct {
     char wifi_ssid[32];
@@ -52,6 +55,7 @@ typedef struct {
     char encoded_sensor_id[100];
     char decoded_sensor_id[100];
     sensor_status_t status;
+    char firmware_version[10];
 } app_settings_t;
 
 extern app_settings_t s_settings;

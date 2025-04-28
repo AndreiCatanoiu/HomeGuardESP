@@ -35,6 +35,7 @@ static void load_defaults(void)
     strncpy(s_settings.decoded_sensor_id, SENSOR_ID_DEFAULT, sizeof(s_settings.decoded_sensor_id));
     id_encoder_base64(s_settings.decoded_sensor_id, s_settings.encoded_sensor_id, sizeof(s_settings.encoded_sensor_id));
     s_settings.status = SENSOR_STATUS_DEFAULT;
+    strncpy(s_settings.firmware_version, SENSOR_FIRMWARE_VERSION, sizeof(s_settings.firmware_version));
 }
 
 void print_all_settings(void){
@@ -55,6 +56,7 @@ void print_all_settings(void){
                               (s_settings.status == SENSOR_STATUS_MAINTENANCE) ? "MAINTENANCE" :
                               "UNKNOWN";
     ESP_LOGI(TAG, "Sensor STATUS: %s", status_str);
+    ESP_LOGI(TAG, "Firmware version: %s", s_settings.firmware_version);
 }
 
 void settings_init(void)
@@ -173,6 +175,15 @@ void settings_init(void)
         changes = true;
     }
 
+    required_size = sizeof(s_settings.firmware_version);
+    err = nvs_get_str(handle, KEY_SENSOR_FIRMWARE_VERSION, s_settings.firmware_version, &required_size);
+    if (err != ESP_OK) 
+    {
+        ESP_LOGW(TAG, "Key %s not found; using default value", KEY_SENSOR_FIRMWARE_VERSION);
+        strncpy(s_settings.firmware_version, SENSOR_FIRMWARE_VERSION, sizeof(s_settings.firmware_version));
+        changes = true;
+    }
+
     print_all_settings();
     nvs_close(handle);
     
@@ -225,6 +236,9 @@ void settings_save(void)
     
     err = nvs_set_u16(handle, KEY_SENSOR_STATUS, s_settings.status);
     if (err != ESP_OK) ESP_LOGE(TAG, "Error saving sensor status");
+
+    err = nvs_set_str(handle, KEY_SENSOR_FIRMWARE_VERSION, s_settings.firmware_version);
+    if (err != ESP_OK) ESP_LOGE(TAG, "Error saving Firmware version");
 
     err = nvs_commit(handle);
     if (err != ESP_OK) 
@@ -367,6 +381,10 @@ esp_err_t settings_set(const char *key, void *value, size_t size, bool is_string
             s_settings.status = *((sensor_status_t *)value);
         }
     }
+    else if (strcmp(key, KEY_SENSOR_FIRMWARE_VERSION) == 0) 
+    {
+        strncpy(s_settings.firmware_version, (char *)value, sizeof(s_settings.firmware_version));
+    } 
     
     ESP_LOGI(TAG, "Setting %s updated successfully", key);
     settings_save();
