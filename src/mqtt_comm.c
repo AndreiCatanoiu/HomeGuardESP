@@ -69,12 +69,12 @@ void is_device_available(void *pvParameter)
         static char availity[16];
         if (s_settings.status == SENSOR_STATUS_UP)
         {   
-            ESP_LOGI(TAG, "Device is available");
+            ESP_LOGD(TAG, "Device is available");
             strcpy(availity,"alive");
         }
         else if (s_settings.status == SENSOR_STATUS_MAINTENANCE)
         {
-            ESP_LOGI(TAG, "Device is in maintenance mode");
+            ESP_LOGW(TAG, "Device is in maintenance mode");
             strcpy(availity,"maintenance");
         }
         mqtt_app_send(availity, strlen(availity)+1, "availity");

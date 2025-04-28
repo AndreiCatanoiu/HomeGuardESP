@@ -3,6 +3,9 @@
 
 #include "freertos/FreeRTOS.h"
 #include "lwip/ip_addr.h"
+#include "esp_http_server.h"
+#include "settings.h"
+#define AP_BUTTON GPIO_NUM_0
 
 void wifi_task(void *pvParameters);
 
