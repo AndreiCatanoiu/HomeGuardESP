@@ -35,6 +35,7 @@ static void initialize_sntp(void)
     static uint8_t init = 0;
     if (init)
         return;
+
     init = 1;
     ESP_LOGI(TAG, "Initializing SNTP");
     esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
@@ -100,6 +101,7 @@ void seconds_to_time(uint32_t seconds, char *time_out, size_t time_out_size)
 {
     if (time_out == NULL)
         return;
+        
     time_t sec = seconds;
     struct tm seconds_struct;
     localtime_r(&sec, &seconds_struct);

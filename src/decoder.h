@@ -1,6 +1,8 @@
 #ifndef DECODER_H
 #define DECODER_H
+
 #include <ctype.h>
+
 typedef struct 
 {
     const char *name;              

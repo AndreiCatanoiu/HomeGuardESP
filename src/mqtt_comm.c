@@ -150,15 +150,19 @@ void mqtt_app_init(void)
 	snprintf(mqtt_uri, sizeof(mqtt_uri), "mqtt://%s", s_settings.mqtt_server);
 
     esp_mqtt_client_config_t mqtt_cfg = {
-        .broker = {
-            .address = {
+        .broker = 
+        {
+            .address = 
+            {
                 .uri = mqtt_uri,                
                 .port = s_settings.mqtt_port,         
             },
         },
-        .credentials = {
+        .credentials = 
+        {
             .username = s_settings.mqtt_user,
-            .authentication = {
+            .authentication = 
+            {
                 .password = s_settings.mqtt_pass,
             }
         }
