@@ -52,9 +52,8 @@ void print_all_settings(void){
     ESP_LOGI(TAG, "Decoded sensor ID: %s", s_settings.decoded_sensor_id);
     ESP_LOGI(TAG, "Encoded sensor ID: %s", s_settings.encoded_sensor_id);
     const char *status_str = (s_settings.status == SENSOR_STATUS_UP) ? "UP" :
-                              (s_settings.status == SENSOR_STATUS_DOWN) ? "DOWN" :
-                              (s_settings.status == SENSOR_STATUS_MAINTENANCE) ? "MAINTENANCE" :
-                              "UNKNOWN";
+                             (s_settings.status == SENSOR_STATUS_DOWN) ? "DOWN" :
+                             (s_settings.status == SENSOR_STATUS_MAINTENANCE) ? "MAINTENANCE" : "UNKNOWN";
     ESP_LOGI(TAG, "Sensor STATUS: %s", status_str);
     ESP_LOGI(TAG, "Firmware version: %s", s_settings.firmware_version);
 }
@@ -64,7 +63,8 @@ void settings_init(void)
     bool changes = false;
     nvs_handle_t handle;
     esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle);
-    if (err != ESP_OK) {
+    if (err != ESP_OK) 
+    {
         ESP_LOGE(TAG, "Error (%s) opening NVS handle; using default values", esp_err_to_name(err));
         load_defaults();
         return;
@@ -244,7 +244,8 @@ void settings_save(void)
     if (err != ESP_OK) 
     {
         ESP_LOGE(TAG, "Error committing NVS");
-    } else 
+    } 
+    else 
     {
         ESP_LOGI(TAG, "Settings saved to flash. Restarting ESP...");
     }
@@ -252,7 +253,8 @@ void settings_save(void)
     esp_restart();
 }
 
-esp_err_t wifi_ap_set(const char *ssid, const char *password){
+esp_err_t wifi_ap_set(const char *ssid, const char *password)
+{
     nvs_handle_t handle;
     esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle);
     if (err != ESP_OK) 
@@ -398,20 +400,23 @@ void settings_reset(void)
 
     nvs_handle_t handle;
     esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle);
-    if (err != ESP_OK) {
+    if (err != ESP_OK) 
+    {
         ESP_LOGE(TAG, "Eroare la deschiderea NVS (%s)", esp_err_to_name(err));
         return;
     }
 
     err = nvs_erase_all(handle);
-    if (err != ESP_OK) {
+    if (err != ESP_OK) 
+    {
         ESP_LOGE(TAG, "Eroare la ștergerea NVS (%s)", esp_err_to_name(err));
         nvs_close(handle);
         return;
     }
 
     err = nvs_commit(handle);
-    if (err != ESP_OK) {
+    if (err != ESP_OK) 
+    {
         ESP_LOGE(TAG, "Eroare la commit-ul NVS (%s)", esp_err_to_name(err));
         nvs_close(handle);
         return;

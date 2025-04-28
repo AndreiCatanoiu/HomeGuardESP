@@ -13,7 +13,8 @@
 void system_init()
 {
     esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) 
+    {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
@@ -25,7 +26,7 @@ void system_init()
     esp_netif_create_default_wifi_ap();
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    ota_init();
+
     settings_init();
     decoder_init();
 }
@@ -33,14 +34,17 @@ void system_init()
 void app_main()
 {
     system_init();
+    
+    xTaskCreate(&command_task, "command_task", 4096, NULL, 5, NULL);
     xTaskCreate(&wifi_task, "wifi_task", 4096, NULL, 5, NULL);
-    while (!is_wifi_connected()) {
+    while (!is_wifi_connected()) 
+    {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
-
+    
+    ota_init();
     ota_check_and_perform();
 
     xTaskCreate(&sensor_selector_task, "sensor_selector_task", 4096, &(s_settings.decoded_sensor_id), 5, NULL);
     xTaskCreate(&is_device_available, "is_device_available", 4096, NULL, 5, NULL);
-    xTaskCreate(&command_task, "command_task", 4096, NULL, 5, NULL);
 }

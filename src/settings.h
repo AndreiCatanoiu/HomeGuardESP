@@ -2,7 +2,8 @@
 #include <stdint.h>
 #include "esp_err.h"
 
-typedef enum {
+typedef enum 
+{
     SENSOR_STATUS_DOWN=0,
     SENSOR_STATUS_UP,
     SENSOR_STATUS_MAINTENANCE,
@@ -40,9 +41,10 @@ typedef enum {
 #define KEY_SENSOR_ID    "sensor_id"
 #define KEY_SENSOR_ID_ENCODED "encoded_id"
 #define KEY_SENSOR_STATUS "sensor_status"
-#define KEY_SENSOR_FIRMWARE_VERSION "firmware_version"
+#define KEY_SENSOR_FIRMWARE_VERSION "firmware_vs"
 
-typedef struct {
+typedef struct 
+{
     char wifi_ssid[32];
     char wifi_pass[32];
     char mqtt_server[100];
@@ -55,7 +57,7 @@ typedef struct {
     char encoded_sensor_id[100];
     char decoded_sensor_id[100];
     sensor_status_t status;
-    char firmware_version[10];
+    char firmware_version[64];
 } app_settings_t;
 
 extern app_settings_t s_settings;
