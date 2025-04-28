@@ -4,7 +4,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "lwip/ip4_addr.h"
-#include "lwip/dns.h"
 #include "driver/gpio.h"
 #include "esp_wifi.h"
 #include "esp_log.h"
@@ -14,6 +13,8 @@
 #include "mqtt_comm.h"
 #include "esp_system.h"
 #include "system_time.h"
+#include "esp_http_server.h"
+#include "dns_server.h" 
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
@@ -47,11 +48,10 @@ typedef struct
 	uint8_t conn_err;
 } WifiDetails_t;
 
-static void start_webserver();
+static void parse_form_data(char* buf, char* field_name, char* output, size_t output_size);
 static void configure_button();
 static bool check_for_ap_press();
 static httpd_handle_t server = NULL;
-static bool ap_mode_active = false;
 static EventGroupHandle_t wifi_event_group;
 static WifiDetails_t wifi_details;
 static WifiAp_t APs[] = 
@@ -87,108 +87,15 @@ bool check_for_ap_press(void) {
     return false;
 }
 
-void start_wifi_ap(void) {
-    char ssid[150];
-    snprintf(ssid, sizeof(ssid), "Device id: %s", s_settings.encoded_sensor_id);
-    ssid[32] = '\0'; 
-
-    wifi_config_t wifi_config = {
-        .ap = {
-            .ssid_len      = 0,                 
-            .channel       = 1,
-            .authmode      = WIFI_AUTH_WPA2_PSK,
-            .max_connection= 4
-        }
-    };
-    strlcpy((char*)wifi_config.ap.ssid, ssid, sizeof(wifi_config.ap.ssid));
-    strlcpy((char*)wifi_config.ap.password, "HomeGuard", sizeof(wifi_config.ap.password));
-    
-
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
-
-    ESP_LOGI(TAG, "AP mode on: SSID=%s PASS=%s", wifi_config.ap.ssid, wifi_config.ap.password);
-    ap_mode_active = true;
-    start_webserver();
+static void start_captive_dns(void) {
+    dns_server_config_t cfg = DNS_SERVER_CONFIG_SINGLE(
+        "*",           
+        "WIFI_AP_DEF"
+    );
+    start_dns_server(&cfg);
+    ESP_LOGI(TAG, "Captive DNS started");
 }
 
-static esp_err_t root_handler(httpd_req_t *req) 
-{
-    const char* html = "<!DOCTYPE html><html><head>"
-        "<title>ESP32 WiFi Setup</title>"
-        "<meta name='viewport' content='width=device-width, initial-scale=1'>"
-        "<style>body{font-family:Arial;margin:0;padding:20px;} "
-        "form{max-width:400px;margin:0 auto;} "
-        "input[type=text],input[type=password]{width:100%;padding:12px 20px;margin:8px 0;display:inline-block;border:1px solid #ccc;box-sizing:border-box;} "
-        "button{background-color:#4CAF50;color:white;padding:14px 20px;margin:8px 0;border:none;cursor:pointer;width:100%;} "
-        "button:hover{opacity:0.8;}</style>"
-        "</head><body>"
-        "<form action='/save-config' method='post'>"
-        "<h2>WiFi Configuration</h2>"
-        "<label for='ssid'><b>WiFi name (SSID)</b></label>"
-        "<input type='text' placeholder='Enter SSID' name='ssid' required>"
-        "<label for='pass'><b>Password</b></label>"
-        "<input type='password' placeholder='Enter password' name='pass' required>"
-        "<button type='submit'>Save and connect</button>"
-        "</form>"
-        "</body></html>";
-        
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, html, strlen(html));
-    return ESP_OK;
-}
-
-static void url_decode(char* dst, const char* src) {
-    char a, b;
-    while (*src) {
-        if ((*src == '%') && ((a = src[1]) && (b = src[2])) && 
-            (isxdigit(a) && isxdigit(b))) {
-            if (a >= 'a') a -= 'a'-'A';
-            if (a >= 'A') a -= ('A' - 10);
-            else a -= '0';
-            
-            if (b >= 'a') b -= 'a'-'A';
-            if (b >= 'A') b -= ('A' - 10);
-            else b -= '0';
-            
-            *dst++ = 16 * a + b;
-            src += 3;
-        } else if (*src == '+') {
-            *dst++ = ' ';
-            src++;
-        } else {
-            *dst++ = *src++;
-        }
-    }
-    *dst++ = '\0';
-}
-
-static void parse_form_data(char* buf, char* field_name, char* output, size_t output_size) {
-    char param_name[64];
-    snprintf(param_name, sizeof(param_name), "%s=", field_name);
-    
-    char* start = strstr(buf, param_name);
-    if (!start) {
-        output[0] = '\0';
-        return;
-    }
-    
-    start += strlen(param_name);
-    char* end = strchr(start, '&');
-    if (!end) {
-        end = start + strlen(start);
-    }
-    
-    size_t param_len = end - start;
-    if (param_len >= output_size) {
-        param_len = output_size - 1;
-    }
-    
-    memcpy(output, start, param_len);
-    output[param_len] = '\0';
-    url_decode(output, output);
-}
 
 static esp_err_t save_wifi_config_handler(httpd_req_t *req) {
     char buf[200];
@@ -239,31 +146,175 @@ static esp_err_t save_wifi_config_handler(httpd_req_t *req) {
     return ESP_FAIL;
 }
 
-void start_webserver(void) {
+static esp_err_t cp_redirect_handler(httpd_req_t *req) {
+    if (strstr(req->uri, "hotspot-detect.html") ||
+        strstr(req->uri, "success.html") ||
+        strstr(req->uri, "generate_204") ||
+        strstr(req->uri, "connecttest.txt") ||
+        strstr(req->uri, "redirect") ||
+        strstr(req->uri, "ncsi.txt")) {
+        
+        if (strstr(req->uri, ".html")) {
+            httpd_resp_set_type(req, "text/html");
+            httpd_resp_send(req, "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>", -1);
+            return ESP_OK;
+        }
+        else if (strstr(req->uri, "generate_204")) {
+            httpd_resp_set_status(req, "204 No Content");
+            httpd_resp_send(req, NULL, 0);
+            return ESP_OK;
+        }
+        else if (strstr(req->uri, "connecttest.txt") || strstr(req->uri, "ncsi.txt")) {
+            httpd_resp_set_type(req, "text/plain");
+            httpd_resp_send(req, "Microsoft NCSI", -1);
+            return ESP_OK;
+        }
+    }
+    
+    if (strcmp(req->uri, "/") != 0) {
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "/");
+        httpd_resp_send(req, NULL, 0);
+    }
+    
+    return ESP_OK;
+}
+
+static esp_err_t root_handler(httpd_req_t *req) 
+{
+    const char* html = "<!DOCTYPE html><html><head>"
+        "<title>ESP32 WiFi Setup</title>"
+        "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+        "<style>body{font-family:Arial;margin:0;padding:20px;} "
+        "form{max-width:400px;margin:0 auto;} "
+        "input[type=text],input[type=password]{width:100%;padding:12px 20px;margin:8px 0;display:inline-block;border:1px solid #ccc;box-sizing:border-box;} "
+        "button{background-color:#4CAF50;color:white;padding:14px 20px;margin:8px 0;border:none;cursor:pointer;width:100%;} "
+        "button:hover{opacity:0.8;}</style>"
+        "</head><body>"
+        "<form action='/save-config' method='post'>"
+        "<h2>WiFi Configuration</h2>"
+        "<label for='ssid'><b>WiFi name (SSID)</b></label>"
+        "<input type='text' placeholder='Enter SSID' name='ssid' required>"
+        "<label for='pass'><b>Password</b></label>"
+        "<input type='password' placeholder='Enter password' name='pass' required>"
+        "<button type='submit'>Save and connect</button>"
+        "</form>"
+        "</body></html>";
+        
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, html, strlen(html));
+    return ESP_OK;
+}
+
+static void start_captive_httpd(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.server_port = 80;
     config.stack_size = 8192;
-    
-    httpd_uri_t root = {
-        .uri       = "/",
-        .method    = HTTP_GET,
-        .handler   = root_handler,
-        .user_ctx  = NULL
-    };
-    
-    httpd_uri_t save_wifi = {
-        .uri       = "/save-config",
-        .method    = HTTP_POST,
-        .handler   = save_wifi_config_handler,
-        .user_ctx  = NULL
-    };
+    config.lru_purge_enable = true;
     
     if (httpd_start(&server, &config) == ESP_OK) {
+        httpd_uri_t root = {
+            .uri = "/",
+            .method = HTTP_GET,
+            .handler = root_handler,
+            .user_ctx = NULL
+        };
         httpd_register_uri_handler(server, &root);
+        
+        httpd_uri_t save_wifi = {
+            .uri = "/save-config",
+            .method = HTTP_POST,
+            .handler = save_wifi_config_handler,
+            .user_ctx = NULL
+        };
         httpd_register_uri_handler(server, &save_wifi);
-        ESP_LOGI(TAG, "Web server started");
+        
+        httpd_uri_t captive_detection = {
+            .uri = "/*",
+            .method = HTTP_GET,
+            .handler = cp_redirect_handler,
+            .user_ctx = NULL
+        };
+        httpd_register_uri_handler(server, &captive_detection);
+        
+        ESP_LOGI(TAG, "Captive portal HTTP server started");
     } else {
-        ESP_LOGE(TAG, "Error starting web server");
+        ESP_LOGE(TAG, "Error starting captive portal HTTP server");
     }
+}
+
+void start_wifi_ap(void) {
+    char ssid[150]; 
+    snprintf(ssid, sizeof(ssid), "Device id: %s", s_settings.encoded_sensor_id);
+    ssid[33] = '/0';
+    
+    wifi_config_t wifi_config = { 0 };
+    strlcpy((char*)wifi_config.ap.ssid, ssid, sizeof(wifi_config.ap.ssid));
+    strlcpy((char*)wifi_config.ap.password, "HomeGuard", sizeof(wifi_config.ap.password));
+    wifi_config.ap.ssid_len      = strlen(ssid);
+    wifi_config.ap.authmode      = WIFI_AUTH_WPA2_PSK;
+    wifi_config.ap.max_connection= 4;
+    wifi_config.ap.channel       = 1;
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+    ESP_LOGI(TAG, "AP mode started: %s", wifi_config.ap.ssid);
+
+    start_captive_dns();
+    start_captive_httpd();
+}
+
+
+static void url_decode(char* dst, const char* src) {
+    char a, b;
+    while (*src) {
+        if ((*src == '%') && ((a = src[1]) && (b = src[2])) && 
+            (isxdigit(a) && isxdigit(b))) {
+            if (a >= 'a') a -= 'a'-'A';
+            if (a >= 'A') a -= ('A' - 10);
+            else a -= '0';
+            
+            if (b >= 'a') b -= 'a'-'A';
+            if (b >= 'A') b -= ('A' - 10);
+            else b -= '0';
+            
+            *dst++ = 16 * a + b;
+            src += 3;
+        } else if (*src == '+') {
+            *dst++ = ' ';
+            src++;
+        } else {
+            *dst++ = *src++;
+        }
+    }
+    *dst++ = '\0';
+}
+
+static void parse_form_data(char* buf, char* field_name, char* output, size_t output_size) {
+    char param_name[64];
+    snprintf(param_name, sizeof(param_name), "%s=", field_name);
+    
+    char* start = strstr(buf, param_name);
+    if (!start) {
+        output[0] = '\0';
+        return;
+    }
+    
+    start += strlen(param_name);
+    char* end = strchr(start, '&');
+    if (!end) {
+        end = start + strlen(start);
+    }
+    
+    size_t param_len = end - start;
+    if (param_len >= output_size) {
+        param_len = output_size - 1;
+    }
+    
+    memcpy(output, start, param_len);
+    output[param_len] = '\0';
+    url_decode(output, output);
 }
 
 void check_for_ap_mode_request(void) 
@@ -350,34 +401,38 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
 
 void wifi_init_sta(void)
 {
-    check_for_ap_mode_request();
-    APs_count = sizeof(APs) / sizeof(APs[0]);
+    static esp_event_handler_instance_t inst_any_id, inst_got_ip;
 
-    ESP_LOGI(TAG, "Init %d access points finished.", APs_count);
+    ESP_ERROR_CHECK( esp_event_handler_instance_register(
+        WIFI_EVENT, ESP_EVENT_ANY_ID,
+        &event_handler, NULL,
+        &inst_any_id
+        ) );
 
-    APs[0].ssid = s_settings.wifi_ssid;
-    APs[0].pass = s_settings.wifi_pass;
+    ESP_ERROR_CHECK( esp_event_handler_instance_register(
+        IP_EVENT, IP_EVENT_STA_GOT_IP,
+        &event_handler, NULL,
+        &inst_got_ip
+        ) );
+    
+    if (wifi_event_group == NULL) {
+        wifi_event_group = xEventGroupCreate();
+        configASSERT(wifi_event_group);
+    }
 
-    wifi_event_group = xEventGroupCreate();
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-    esp_netif_create_default_wifi_sta();
-    esp_netif_create_default_wifi_ap();
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    esp_event_handler_instance_t instance_any_id;
-    esp_event_handler_instance_t instance_got_ip;
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL, &instance_any_id));
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL, &instance_got_ip));
+    xEventGroupClearBits(wifi_event_group, CONNECTED_BIT | DISCONNECTED_BIT);
 
     wifi_config_t wifi_config = { 0 };
-    snprintf((char *)wifi_config.sta.ssid, sizeof(wifi_config.sta.ssid), "%s", APs[0].ssid);
-    snprintf((char *)wifi_config.sta.password, sizeof(wifi_config.sta.password), "%s", APs[0].pass);
+    snprintf((char*)wifi_config.sta.ssid, sizeof(wifi_config.sta.ssid),
+             "%s", s_settings.wifi_ssid);
+    snprintf((char*)wifi_config.sta.password, sizeof(wifi_config.sta.password),
+             "%s", s_settings.wifi_pass);
+
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    ESP_LOGI(TAG, "Init finished.");
+    ESP_LOGI(TAG, "STA mode started, connecting to %s", wifi_config.sta.ssid);
 }
 
 static void wifi_connect(const char* ssid, const char* password)
@@ -435,21 +490,17 @@ void wifi_task_events(WIFI_STATES new_state)
 	}
 }
 
-
 void wifi_task(void *pvParameters) {
     ESP_LOGI(TAG, "WiFi task pornit");
     esp_efuse_mac_get_default(wifi_details.mac);
 
-    // configurează butonul o singură dată
     configure_button();
 
     bool has_credentials = (strlen(s_settings.wifi_ssid) > 0);
     if (!has_credentials) {
         start_wifi_ap();
-        while(ap_mode_active) vTaskDelay(500 / portTICK_PERIOD_MS);
-        return;
+        for(;;) vTaskDelay(1000/portTICK_PERIOD_MS);
     }
-    // init STA
     wifi_init_sta();
     wifi_task_events(CONNECTING);
 
@@ -505,7 +556,6 @@ void wifi_task(void *pvParameters) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
-
 
 bool is_wifi_connected()
 {
