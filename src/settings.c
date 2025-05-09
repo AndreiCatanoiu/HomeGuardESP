@@ -33,7 +33,7 @@ static void load_defaults(void)
     strncpy(s_settings.mqtt_up, MQTT_UP_DEFAULT, sizeof(s_settings.mqtt_up));
     strncpy(s_settings.mqtt_down, MQTT_DOWN_DEFAULT, sizeof(s_settings.mqtt_down));
     strncpy(s_settings.decoded_sensor_id, SENSOR_ID_DEFAULT, sizeof(s_settings.decoded_sensor_id));
-    id_encoder_base64(s_settings.decoded_sensor_id, s_settings.encoded_sensor_id, sizeof(s_settings.encoded_sensor_id));
+    id_encoder(s_settings.decoded_sensor_id, s_settings.encoded_sensor_id, sizeof(s_settings.encoded_sensor_id));
     s_settings.status = SENSOR_STATUS_DEFAULT;
     strncpy(s_settings.firmware_version, SENSOR_FIRMWARE_VERSION, sizeof(s_settings.firmware_version));
 }
@@ -159,14 +159,7 @@ void settings_init(void)
         changes = true;
     }
 
-    required_size = sizeof(s_settings.encoded_sensor_id);
-    err = nvs_get_str(handle, KEY_SENSOR_ID_ENCODED, s_settings.encoded_sensor_id, &required_size);
-    if (err != ESP_OK) 
-    {
-        ESP_LOGW(TAG, "Key %s not found; using default value", KEY_SENSOR_ID_ENCODED);
-        strncpy(s_settings.encoded_sensor_id, SENSOR_ID_ENCODED_DEFAULT, sizeof(s_settings.encoded_sensor_id));
-        changes = true;
-    }
+    id_encoder(s_settings.decoded_sensor_id, s_settings.encoded_sensor_id, sizeof(s_settings.encoded_sensor_id));
 
     err = nvs_get_u16(handle, KEY_SENSOR_STATUS, &s_settings.status);
     if (err != ESP_OK) {
@@ -369,7 +362,7 @@ esp_err_t settings_set(const char *key, void *value, size_t size, bool is_string
         strncpy(s_settings.decoded_sensor_id, (char *)value, sizeof(s_settings.decoded_sensor_id) - 1);
         s_settings.decoded_sensor_id[sizeof(s_settings.decoded_sensor_id) - 1] = '\0';
         
-        id_encoder_base64(s_settings.decoded_sensor_id, s_settings.encoded_sensor_id, sizeof(s_settings.encoded_sensor_id));
+        id_encoder(s_settings.decoded_sensor_id, s_settings.encoded_sensor_id, sizeof(s_settings.encoded_sensor_id));
         s_settings.encoded_sensor_id[sizeof(s_settings.encoded_sensor_id) - 1] = '\0';
     }
     else if (strcmp(key, KEY_SENSOR_STATUS) == 0) 
