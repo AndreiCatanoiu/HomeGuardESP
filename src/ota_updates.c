@@ -9,9 +9,12 @@
 #include "cJSON.h"
 
 static const char* TAG = "OTA";
-static const char* s_manifest_url = "http://andreicatanoiu.ro/HomeGuard/firmware/latest.json";
+static const char* s_manifest_url = "https://andreicatanoiu.ro/HomeGuard/firmware/latest.json";
 static const char* s_current_version = NULL;
 char ver_copy[10];
+
+extern const uint8_t server_cert_pem_start[] asm("_binary_fullchain_pem_start");
+extern const uint8_t server_cert_pem_end[] asm("_binary_fullchain_pem_end");
 
 void ota_init() 
 {
@@ -26,9 +29,11 @@ static char* download_json(const char* url)
     
     esp_http_client_config_t config = 
     {
-        .url = url,
+		.url = (url != NULL ? url : s_manifest_url),
         .timeout_ms = 5000,
         .keep_alive_enable = true,
+		.cert_pem = (char *)server_cert_pem_start,
+        .skip_cert_common_name_check = true,
     };
     
     esp_http_client_handle_t client = esp_http_client_init(&config);
@@ -221,7 +226,8 @@ bool ota_check_and_perform(void)
         .url = update_url,
         .timeout_ms = 60000,
         .keep_alive_enable = true,
-        .skip_cert_common_name_check = true,
+        .cert_pem = (char *)server_cert_pem_start,
+        .skip_cert_common_name_check = false,
     };
     
     esp_https_ota_config_t ota_cfg = 
