@@ -16,6 +16,8 @@ Cmd_t *exec = NULL;
 int exec_count = 0;
 Cmd_t *query = NULL;
 int query_count = 0;
+static const unsigned char KEY[] = {0x5A, 0xA5, 0x3C, 0xC3};
+
 void decode_settings(char *args)
 {
     char *group = strtok(args, " ");
@@ -387,16 +389,29 @@ void command_task(void *pvParameters)
     }
 }
 
-void id_encoder_base64(const char *input, char *output, size_t output_size) 
+void id_encoder(const char *input, char *output, size_t output_size) 
 {
+    size_t len = strlen(input);
+    unsigned char *buf = malloc(len);
+    
+    for (size_t i = 0; i < len; ++i)
+        buf[i] = input[i] ^ KEY[i % sizeof(KEY)];
+
     size_t olen;
-    mbedtls_base64_encode((unsigned char *)output, output_size, &olen, (const unsigned char *)input, strlen(input));
+    mbedtls_base64_encode((unsigned char *)output, output_size, &olen, buf, len);
     output[olen] = '\0';
+    free(buf);
 }
 
-void id_decoder_base64(const char *input, char *output, size_t output_size) 
+void id_decoder(const char *input, char *output, size_t output_size) 
 {
-    size_t olen;
-    mbedtls_base64_decode((unsigned char *)output, output_size, &olen, (const unsigned char *)input, strlen(input));
-    output[olen] = '\0';
+    size_t ilen = strlen(input), olen;
+    unsigned char *buf = malloc(ilen);
+    mbedtls_base64_decode(buf, ilen, &olen, (unsigned char *)input, ilen);
+
+    size_t outlen = (olen < output_size-1 ? olen : output_size-1);
+    for (size_t i = 0; i < outlen; ++i)
+        output[i] = buf[i] ^ KEY[i % sizeof(KEY)];
+    output[outlen] = '\0';
+    free(buf);
 }
