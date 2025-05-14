@@ -23,7 +23,7 @@ typedef enum
 #define SENSOR_ID_DEFAULT    "SenzorGaz-1"
 #define SENSOR_ID_ENCODED_DEFAULT    ""
 #define SENSOR_STATUS_DEFAULT  SENSOR_STATUS_UP
-#define SENSOR_FIRMWARE_VERSION  "1.1.0"
+#define SENSOR_FIRMWARE_VERSION  "1.2.0"
 
 #define NVS_NAMESPACE "app_settings"
 
