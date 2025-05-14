@@ -161,11 +161,15 @@ void settings_init(void)
 
     id_encoder(s_settings.decoded_sensor_id, s_settings.encoded_sensor_id, sizeof(s_settings.encoded_sensor_id));
 
-    err = nvs_get_u16(handle, KEY_SENSOR_STATUS, &s_settings.status);
+    uint16_t sensor_status;
+    err = nvs_get_u16(handle, KEY_SENSOR_STATUS, &sensor_status);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "Key %s not found; using default value", KEY_SENSOR_STATUS);
         s_settings.status = SENSOR_STATUS_DEFAULT;
         changes = true;
+    }
+    else {
+        s_settings.status = (sensor_status_t) sensor_status;
     }
 
     required_size = sizeof(s_settings.firmware_version);

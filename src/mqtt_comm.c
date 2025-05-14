@@ -77,7 +77,7 @@ void is_device_available(void *pvParameter)
             ESP_LOGW(TAG, "Device is in maintenance mode");
             strcpy(availity,"maintenance");
         }
-        mqtt_app_send(availity, strlen(availity)+1, "availity");
+        mqtt_app_send(availity, strlen(availity)+1, "availability");
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
