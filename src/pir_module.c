@@ -36,6 +36,7 @@ void pir_process_data()
         char msg_motion[200] ;
         sprintf(msg_motion, "Motion detected! \n%s", timestr);
         ESP_LOGE(TAG, "%s", msg_motion);
+        sprintf(msg_motion, "Motion detected!");
         mqtt_app_send(msg_motion,strlen(msg_motion),"alerts");
     }
     else
